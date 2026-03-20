@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MoodFox</string>
+
+    <!-- Bottom navigation tabs -->
+    <string name="tab_checkin">Vnos</string>
+    <string name="tab_calendar">Koledar</string>
+    <string name="tab_analysis">Analiza</string>
+    <string name="tab_settings">Nastavitve</string>
+
+    <!-- Common buttons -->
+    <string name="button_save">Shrani</string>
+    <string name="button_cancel">Prekliči</string>
+    <string name="button_skip">Preskoči</string>
+    <string name="button_get_started">Začnimo</string>
+    <string name="button_edit">Uredi</string>
+    <string name="button_delete">Izbriši</string>
+    <string name="button_ok">V redu</string>
+    <string name="button_next">Naprej</string>
+    <string name="button_back">Nazaj</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_back">Nazaj</string>
+    <string name="cd_close">Zapri</string>
+    <string name="cd_edit">Uredi</string>
+    <string name="cd_delete">Izbriši</string>
+    <string name="cd_add">Dodaj</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_page1_title">Kako se počutiš?</string>
+    <string name="onboarding_page1_subtitle">Hitra, poštena sledenje razpoloženju — večkrat na dan.</string>
+    <string name="onboarding_page2_title">Lestvica</string>
+    <string name="onboarding_page2_subtitle">Povleci in izberi število od −10 do +10. Nič posebnega? Nič narobe.</string>
+    <string name="onboarding_page3_title">Cilj</string>
+    <string name="onboarding_page3_subtitle">Ne +10 ves čas. Miren povprečni med −2 in +2, brez velikih nihanj. Stabilno zmaga.</string>
+    <string name="onboarding_page4_title">Prilagodi svojemu okusu</string>
+    <string name="onboarding_page4_subtitle">Izberi pomočnika in barvno temo. Kasneje jih lahko spreminjaš.</string>
+
+    <!-- Check-in screen -->
+    <string name="checkin_title">Kako se počutiš?</string>
+    <string name="checkin_mood_value">Razpoloženje: %d</string>
+    <string name="checkin_note_hint">Kratka opomba…</string>
+    <string name="checkin_causes_label">Kaj vpliva na tvoje razpoloženje?</string>
+    <string name="checkin_saved">Shranjeno</string>
+
+    <!-- Calendar screen -->
+    <string name="calendar_title">Koledar</string>
+    <string name="calendar_no_entries">Ta mesec ni vnosov.</string>
+    <string name="calendar_entries_count">%d vnosov</string>
+
+    <!-- Day detail -->
+    <string name="day_detail_avg">Povp: %+.1f</string>
+    <string name="day_detail_range">Razpon: %1$+d do %2$+d</string>
+
+    <!-- Analysis screen -->
+    <string name="analysis_title">Analiza</string>
+    <string name="analysis_range_7d">7 dni</string>
+    <string name="analysis_range_30d">30 dni</string>
+    <string name="analysis_range_90d">90 dni</string>
+    <string name="analysis_rolling_avg">Drseče povprečje</string>
+    <string name="analysis_volatility">Nihajnost</string>
+    <string name="analysis_stability_calm">Mirno</string>
+    <string name="analysis_stability_moderate">Zmerno</string>
+    <string name="analysis_stability_turbulent">Nemirno</string>
+    <string name="analysis_in_band">V mirni coni</string>
+    <string name="analysis_out_of_band">Izven mirne cone</string>
+    <string name="analysis_no_data">Premalo podatkov. Nadaljuj z vnosom.</string>
+    <string name="analysis_obs_avg_in_band">Tvoje %1$d-dnevno povprečje je %2$+.1f — v mirni coni.</string>
+    <string name="analysis_obs_avg_above_band">Tvoje %1$d-dnevno povprečje je %2$+.1f — nekoliko visoko. Je vzdržno?</string>
+    <string name="analysis_obs_avg_below_band">Tvoje %1$d-dnevno povprečje je %2$+.1f — nekoliko pod stabilnim območjem.</string>
+    <string name="analysis_obs_swings">V tem obdobju je več večjih nihanj. Povprečje je sicer v redu, pot pa nihajne.</string>
+    <string name="analysis_obs_low_mondays">Tvoje razpoloženje je v ponedeljek povprečno nižje.</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Nastavitve</string>
+    <string name="settings_theme">Barvna tema</string>
+    <string name="settings_helper">Pomočnik</string>
+    <string name="settings_animations">Animacije</string>
+    <string name="settings_reduce_motion">Manj gibanja</string>
+    <string name="settings_reminders">Opomniki</string>
+    <string name="settings_reminders_enabled">Omogoči opomnike</string>
+    <string name="settings_weather">Vremenski kontekst</string>
+    <string name="settings_weather_enabled">Omogoči sledenje vremena</string>
+    <string name="settings_weather_city_hint">Ime mesta (opcijsko)</string>
+    <string name="settings_categories">Upravljanje vzrokov</string>
+    <string name="settings_backup">Varnostna kopija in izvoz</string>
+    <string name="settings_export">Izvozi podatke</string>
+    <string name="settings_import">Uvozi podatke</string>
+    <string name="settings_delete_all">Izbriši vse podatke</string>
+    <string name="settings_delete_confirm">S tem boš trajno izbrisal vse vnose razpoloženja. Tega ni mogoče razveljaviti.</string>
+    <string name="settings_debug_logs">Ogled dnevnikov</string>
+
+    <!-- Category manager -->
+    <string name="categories_title">Upravljanje vzrokov</string>
+    <string name="categories_add">Dodaj vzrok</string>
+    <string name="categories_name_hint">Ime vzroka</string>
+    <string name="categories_emoji_hint">Emoji</string>
+
+    <!-- Default cause categories -->
+    <string name="cause_work">Delo</string>
+    <string name="cause_family">Družina</string>
+    <string name="cause_relationship">Razmerje</string>
+    <string name="cause_friends">Prijatelji / Družabnost</string>
+    <string name="cause_sleep">Spanje</string>
+    <string name="cause_health">Zdravje</string>
+    <string name="cause_exercise">Gibanje</string>
+    <string name="cause_food">Hrana</string>
+    <string name="cause_weather">Vreme</string>
+    <string name="cause_money">Denar</string>
+    <string name="cause_routine">Rutina</string>
+    <string name="cause_stress">Stres / Tesnoba</string>
+    <string name="cause_achievement">Dosežek</string>
+    <string name="cause_rest">Počitek</string>
+    <string name="cause_nothing">Nič posebnega</string>
+    <string name="cause_other">Drugo</string>
+
+    <!-- Helper names -->
+    <string name="helper_fox">Lisica</string>
+    <string name="helper_cat">Mačka</string>
+    <string name="helper_bunny">Zajček</string>
+    <string name="helper_panda">Panda</string>
+
+    <!-- Error / empty states -->
+    <string name="placeholder_no_data">—</string>
+    <string name="error_generic">Prišlo je do napake.</string>
+</resources>

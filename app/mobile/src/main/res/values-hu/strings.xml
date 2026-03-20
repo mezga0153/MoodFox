@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MoodFox</string>
+
+    <!-- Bottom navigation tabs -->
+    <string name="tab_checkin">Bejelentkezés</string>
+    <string name="tab_calendar">Naptár</string>
+    <string name="tab_analysis">Elemzés</string>
+    <string name="tab_settings">Beállítások</string>
+
+    <!-- Common buttons -->
+    <string name="button_save">Mentés</string>
+    <string name="button_cancel">Mégsem</string>
+    <string name="button_skip">Kihagyás</string>
+    <string name="button_get_started">Kezdjük el</string>
+    <string name="button_edit">Szerkesztés</string>
+    <string name="button_delete">Törlés</string>
+    <string name="button_ok">Rendben</string>
+    <string name="button_next">Következő</string>
+    <string name="button_back">Vissza</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_back">Vissza</string>
+    <string name="cd_close">Bezárás</string>
+    <string name="cd_edit">Szerkesztés</string>
+    <string name="cd_delete">Törlés</string>
+    <string name="cd_add">Hozzáadás</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_page1_title">Hogy érzed magad?</string>
+    <string name="onboarding_page1_subtitle">Gyors, őszinte hangulatkövetés — naponta többször.</string>
+    <string name="onboarding_page2_title">A skála</string>
+    <string name="onboarding_page2_subtitle">Húzd a számot −10 és +10 közé. Semmi különös? Ez is rendben van.</string>
+    <string name="onboarding_page3_title">A cél</string>
+    <string name="onboarding_page3_subtitle">Nem mindig +10. Egy nyugodt átlag −2 és +2 között, nagy kilengések nélkül. A stabil nyeri.</string>
+    <string name="onboarding_page4_title">Tedd személyessé</string>
+    <string name="onboarding_page4_subtitle">Válassz segítőt és színtémát. Ezt később is módosíthatod.</string>
+
+    <!-- Check-in screen -->
+    <string name="checkin_title">Hogy érzed magad?</string>
+    <string name="checkin_mood_value">Hangulat: %d</string>
+    <string name="checkin_note_hint">Rövid megjegyzés…</string>
+    <string name="checkin_causes_label">Mi befolyásolja a hangulatodat?</string>
+    <string name="checkin_saved">Mentve</string>
+
+    <!-- Calendar screen -->
+    <string name="calendar_title">Naptár</string>
+    <string name="calendar_no_entries">Ebben a hónapban nincs bejegyzés.</string>
+    <string name="calendar_entries_count">%d bejegyzés</string>
+
+    <!-- Day detail -->
+    <string name="day_detail_avg">Átlag: %+.1f</string>
+    <string name="day_detail_range">Tartomány: %1$+d–%2$+d</string>
+
+    <!-- Analysis screen -->
+    <string name="analysis_title">Elemzés</string>
+    <string name="analysis_range_7d">7 nap</string>
+    <string name="analysis_range_30d">30 nap</string>
+    <string name="analysis_range_90d">90 nap</string>
+    <string name="analysis_rolling_avg">Gördülő átlag</string>
+    <string name="analysis_volatility">Ingadozás</string>
+    <string name="analysis_stability_calm">Nyugodt</string>
+    <string name="analysis_stability_moderate">Mérsékelt</string>
+    <string name="analysis_stability_turbulent">Hullámzó</string>
+    <string name="analysis_in_band">A nyugodt zónában</string>
+    <string name="analysis_out_of_band">A nyugodt zónán kívül</string>
+    <string name="analysis_no_data">Még nincs elég adat. Folyasd a naplózást.</string>
+    <string name="analysis_obs_avg_in_band">A(z) %1$d napos átlagod %2$+.1f — a nyugodt zónában.</string>
+    <string name="analysis_obs_avg_above_band">A(z) %1$d napos átlagod %2$+.1f — kissé magas. Fenntartható?</string>
+    <string name="analysis_obs_avg_below_band">A(z) %1$d napos átlagod %2$+.1f — kissé a stabil tartomány alatt.</string>
+    <string name="analysis_obs_swings">Ebben az időszakban több nagy kilengés volt. Az átlag rendben néz ki, de az út hullámzó.</string>
+    <string name="analysis_obs_low_mondays">A hangulatod átlagosan alacsonyabb hétfőn.</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Beállítások</string>
+    <string name="settings_theme">Színtéma</string>
+    <string name="settings_helper">Segítő karakter</string>
+    <string name="settings_animations">Animációk</string>
+    <string name="settings_reduce_motion">Mozgás csökkentése</string>
+    <string name="settings_reminders">Emlékeztetők</string>
+    <string name="settings_reminders_enabled">Emlékeztetők engedélyezése</string>
+    <string name="settings_weather">Időjárás kontextus</string>
+    <string name="settings_weather_enabled">Időjáráskövetés engedélyezése</string>
+    <string name="settings_weather_city_hint">Városnév (opcionális)</string>
+    <string name="settings_categories">Okok kezelése</string>
+    <string name="settings_backup">Biztonsági mentés és exportálás</string>
+    <string name="settings_export">Adatok exportálása</string>
+    <string name="settings_import">Adatok importálása</string>
+    <string name="settings_delete_all">Összes adat törlése</string>
+    <string name="settings_delete_confirm">Ez véglegesen törli az összes hangulat-bejegyzést. Ez nem vonható vissza.</string>
+    <string name="settings_debug_logs">Hibakeresési naplók megtekintése</string>
+
+    <!-- Category manager -->
+    <string name="categories_title">Okok kezelése</string>
+    <string name="categories_add">Ok hozzáadása</string>
+    <string name="categories_name_hint">Ok neve</string>
+    <string name="categories_emoji_hint">Emoji</string>
+
+    <!-- Default cause categories -->
+    <string name="cause_work">Munka</string>
+    <string name="cause_family">Család</string>
+    <string name="cause_relationship">Kapcsolat</string>
+    <string name="cause_friends">Barátok / Társasági élet</string>
+    <string name="cause_sleep">Alvás</string>
+    <string name="cause_health">Egészség</string>
+    <string name="cause_exercise">Mozgás</string>
+    <string name="cause_food">Étel</string>
+    <string name="cause_weather">Időjárás</string>
+    <string name="cause_money">Pénz</string>
+    <string name="cause_routine">Rutin</string>
+    <string name="cause_stress">Stressz / Szorongás</string>
+    <string name="cause_achievement">Siker</string>
+    <string name="cause_rest">Pihenés</string>
+    <string name="cause_nothing">Semmi különös</string>
+    <string name="cause_other">Egyéb</string>
+
+    <!-- Helper names -->
+    <string name="helper_fox">Róka</string>
+    <string name="helper_cat">Macska</string>
+    <string name="helper_bunny">Nyuszi</string>
+    <string name="helper_panda">Panda</string>
+
+    <!-- Error / empty states -->
+    <string name="placeholder_no_data">—</string>
+    <string name="error_generic">Valami hiba történt.</string>
+</resources>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MoodFox</string>
+
+    <!-- Bottom navigation tabs -->
+    <string name="tab_checkin">Check-in</string>
+    <string name="tab_calendar">Calendar</string>
+    <string name="tab_analysis">Analysis</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Common buttons -->
+    <string name="button_save">Save</string>
+    <string name="button_cancel">Cancel</string>
+    <string name="button_skip">Skip</string>
+    <string name="button_get_started">Let\'s start</string>
+    <string name="button_edit">Edit</string>
+    <string name="button_delete">Delete</string>
+    <string name="button_ok">OK</string>
+    <string name="button_next">Next</string>
+    <string name="button_back">Back</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_back">Back</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_edit">Edit</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_add">Add</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_page1_title">How are you feeling?</string>
+    <string name="onboarding_page1_subtitle">Quick, honest mood tracking — several times a day.</string>
+    <string name="onboarding_page2_title">The Scale</string>
+    <string name="onboarding_page2_subtitle">Drag to pick a number from −10 to +10. Zero means nothing special. That\'s fine.</string>
+    <string name="onboarding_page3_title">The Goal</string>
+    <string name="onboarding_page3_subtitle">Not +10 all the time. A calm average between −2 and +2, without big swings. Steady wins.</string>
+    <string name="onboarding_page4_title">Make it yours</string>
+    <string name="onboarding_page4_subtitle">Pick a helper and a color theme. You can change these later.</string>
+
+    <!-- Check-in screen -->
+    <string name="checkin_title">How are you feeling?</string>
+    <string name="checkin_mood_value">Mood: %d</string>
+    <string name="checkin_note_hint">Optional note…</string>
+    <string name="checkin_causes_label">What\'s influencing your mood?</string>
+    <string name="checkin_saved">Saved</string>
+
+    <!-- Calendar screen -->
+    <string name="calendar_title">Calendar</string>
+    <string name="calendar_no_entries">No entries this month.</string>
+    <string name="calendar_entries_count">%d entries</string>
+
+    <!-- Day detail -->
+    <string name="day_detail_avg">Avg: %+.1f</string>
+    <string name="day_detail_range">Range: %1$+d to %2$+d</string>
+
+    <!-- Analysis screen -->
+    <string name="analysis_title">Analysis</string>
+    <string name="analysis_range_7d">7 days</string>
+    <string name="analysis_range_30d">30 days</string>
+    <string name="analysis_range_90d">90 days</string>
+    <string name="analysis_rolling_avg">Rolling average</string>
+    <string name="analysis_volatility">Volatility</string>
+    <string name="analysis_stability_calm">Calm</string>
+    <string name="analysis_stability_moderate">Moderate</string>
+    <string name="analysis_stability_turbulent">Turbulent</string>
+    <string name="analysis_in_band">Within calm zone</string>
+    <string name="analysis_out_of_band">Outside calm zone</string>
+    <string name="analysis_no_data">Not enough data yet. Keep logging.</string>
+    <string name="analysis_obs_avg_in_band">Your %1$d-day average is %2$+.1f — within the calm zone.</string>
+    <string name="analysis_obs_avg_above_band">Your %1$d-day average is %2$+.1f — a bit high. Sustainable?</string>
+    <string name="analysis_obs_avg_below_band">Your %1$d-day average is %2$+.1f — a bit below the stable range.</string>
+    <string name="analysis_obs_swings">You have several large swings this period. The average looks fine but the ride is rough.</string>
+    <string name="analysis_obs_low_mondays">Your average mood tends to be lower on Mondays.</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Color theme</string>
+    <string name="settings_helper">Helper character</string>
+    <string name="settings_animations">Animations</string>
+    <string name="settings_reduce_motion">Reduce motion</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_enabled">Enable reminders</string>
+    <string name="settings_weather">Weather context</string>
+    <string name="settings_weather_enabled">Enable weather tracking</string>
+    <string name="settings_weather_city_hint">City name (optional fallback)</string>
+    <string name="settings_categories">Manage causes</string>
+    <string name="settings_backup">Backup &amp; export</string>
+    <string name="settings_export">Export data</string>
+    <string name="settings_import">Import data</string>
+    <string name="settings_delete_all">Delete all data</string>
+    <string name="settings_delete_confirm">This will permanently delete all your mood entries. This cannot be undone.</string>
+    <string name="settings_debug_logs">View debug logs</string>
+
+    <!-- Category manager -->
+    <string name="categories_title">Manage causes</string>
+    <string name="categories_add">Add cause</string>
+    <string name="categories_name_hint">Cause name</string>
+    <string name="categories_emoji_hint">Emoji</string>
+
+    <!-- Default cause categories -->
+    <string name="cause_work">Work</string>
+    <string name="cause_family">Family</string>
+    <string name="cause_relationship">Relationship</string>
+    <string name="cause_friends">Friends / Social</string>
+    <string name="cause_sleep">Sleep</string>
+    <string name="cause_health">Health</string>
+    <string name="cause_exercise">Exercise</string>
+    <string name="cause_food">Food</string>
+    <string name="cause_weather">Weather</string>
+    <string name="cause_money">Money</string>
+    <string name="cause_routine">Routine</string>
+    <string name="cause_stress">Stress / Anxiety</string>
+    <string name="cause_achievement">Achievement</string>
+    <string name="cause_rest">Rest</string>
+    <string name="cause_nothing">Nothing specific</string>
+    <string name="cause_other">Other</string>
+
+    <!-- Helper names -->
+    <string name="helper_fox">Fox</string>
+    <string name="helper_cat">Cat</string>
+    <string name="helper_bunny">Bunny</string>
+    <string name="helper_panda">Panda</string>
+
+    <!-- Error / empty states -->
+    <string name="placeholder_no_data">—</string>
+    <string name="error_generic">Something went wrong.</string>
+</resources>
