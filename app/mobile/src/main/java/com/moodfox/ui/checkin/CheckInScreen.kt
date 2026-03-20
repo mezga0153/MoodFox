@@ -392,36 +392,40 @@ private fun CauseChipRow(
     onToggle: (Long) -> Unit,
     colors: com.moodfox.ui.theme.AppColors,
 ) {
-    val chunked = categories.chunked(4)
+    val chunked = categories.chunked(3)
     chunked.forEach { row ->
         Row(
-            modifier            = Modifier
+            modifier              = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             row.forEach { cat ->
-                val isSelected = cat.id in selected
+                val isSelected  = cat.id in selected
                 val borderColor = if (isSelected) colors.primary else colors.outline
                 val bgColor     = if (isSelected) colors.primaryContainer else colors.cardSurface
                 Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
+                        .weight(1f)
                         .clip(RoundedCornerShape(20.dp))
                         .background(bgColor)
-                        .border(
-                            width = 1.dp,
-                            color = borderColor,
-                            shape = RoundedCornerShape(20.dp)
-                        )
+                        .border(1.dp, borderColor, RoundedCornerShape(20.dp))
                         .clickable { onToggle(cat.id) }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
                 ) {
                     Text(
-                        text  = "${cat.emoji} ${cat.name}",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (isSelected) colors.primary else colors.onSurfaceVariant,
+                        text      = "${cat.emoji} ${cat.name}",
+                        style     = MaterialTheme.typography.labelLarge,
+                        color     = if (isSelected) colors.primary else colors.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        maxLines  = 2,
                     )
                 }
+            }
+            // fill empty cells in the last row so weights stay even
+            repeat(3 - row.size) {
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
