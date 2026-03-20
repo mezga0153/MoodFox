@@ -244,20 +244,6 @@ private fun SliderCard(value: Int, onChange: (Int) -> Unit, colors: AppColors) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             MoodScaleSlider(value = value, onChange = onChange, colors = colors)
-            Spacer(Modifier.height(12.dp))
-            // Calm zone pill
-            Surface(
-                shape  = RoundedCornerShape(50.dp),
-                color  = colors.accent.copy(alpha = 0.10f),
-                border = BorderStroke(1.dp, colors.accent.copy(alpha = 0.28f)),
-            ) {
-                Text(
-                    text     = stringResource(R.string.checkin_target_label),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp),
-                    style    = MaterialTheme.typography.labelMedium,
-                    color    = colors.accent,
-                )
-            }
         }
     }
 }
