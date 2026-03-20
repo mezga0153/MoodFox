@@ -87,8 +87,13 @@
 
     <!-- Settings screen -->
     <string name="settings_title">Beállítások</string>
-    <string name="settings_theme">Színtéma</string>
-    <string name="settings_helper">Segítő karakter</string>
+    <string name="settings_theme">Színtéma</string>    <string name="theme_dark">Sötét</string>
+    <string name="theme_light">Világos</string>
+    <string name="settings_language">Nyelv</string>
+    <string name="language_system">Rendszer alapértelmezett</string>
+    <string name="language_en">Angol</string>
+    <string name="language_sl">Szlovén</string>
+    <string name="language_hu">Magyar</string>    <string name="settings_helper">Segítő karakter</string>
     <string name="settings_animations">Animációk</string>
     <string name="settings_reduce_motion">Mozgás csökkentése</string>
     <string name="settings_reminders">Emlékeztetők</string>

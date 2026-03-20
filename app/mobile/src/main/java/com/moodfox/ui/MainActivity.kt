@@ -36,6 +36,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appLogger.user("App opened")
+        // AppCompatDelegate.setApplicationLocales() persists locale across restarts automatically.
+        // We just need to call it when the user changes language in settings (done in SettingsScreen).
         enableEdgeToEdge()
         setContent {
             val themePresetName by preferencesManager.themePreset.collectAsState(initial = "PURPLE_DARK")

@@ -88,6 +88,13 @@
     <!-- Settings screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_theme">Color theme</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="settings_language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="language_en">English</string>
+    <string name="language_sl">Slovenian</string>
+    <string name="language_hu">Hungarian</string>
     <string name="settings_helper">Helper character</string>
     <string name="settings_animations">Animations</string>
     <string name="settings_reduce_motion">Reduce motion</string>

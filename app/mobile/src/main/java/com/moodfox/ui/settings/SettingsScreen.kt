@@ -2,6 +2,7 @@ package com.moodfox.ui.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
 import com.moodfox.R
 import com.moodfox.data.local.AppLogger
 import com.moodfox.data.local.BackupManager
@@ -51,6 +53,7 @@ fun SettingsScreen(
     val quietEnd        by preferencesManager.quietHoursEnd.collectAsState(initial = "08:00")
     val animationsEnabled by preferencesManager.animationsEnabled.collectAsState(initial = true)
     val reduceMotion    by preferencesManager.reduceMotion.collectAsState(initial = false)
+    val language        by preferencesManager.language.collectAsState(initial = "")
 
     val allEntries by moodEntryDao.getAll().collectAsState(initial = emptyList())
     val context    = androidx.compose.ui.platform.LocalContext.current
@@ -77,10 +80,70 @@ fun SettingsScreen(
         // ── Theme section ────────────────────────────────
         SectionHeader(stringResource(R.string.settings_theme), colors)
         Spacer(Modifier.height(10.dp))
-        ThemePresetPicker(
-            currentName = themePresetName,
-            onSelect    = { scope.launch { preferencesManager.setThemePreset(it.name) } },
-            colors      = colors,
+
+        val currentPreset = try { ThemePreset.valueOf(themePresetName) } catch (_: Exception) { ThemePreset.PURPLE_DARK }
+        val currentMode   = currentPreset.mode
+
+        // Dark / Light chips
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ToneChip(
+                label    = stringResource(R.string.theme_dark),
+                selected = currentMode == ThemeMode.DARK,
+                colors   = colors,
+            ) {
+                val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.DARK }
+                scope.launch { preferencesManager.setThemePreset(target.name) }
+            }
+            ToneChip(
+                label    = stringResource(R.string.theme_light),
+                selected = currentMode == ThemeMode.LIGHT,
+                colors   = colors,
+            ) {
+                val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.LIGHT }
+                scope.launch { preferencesManager.setThemePreset(target.name) }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+
+        // Color swatches
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier              = Modifier.fillMaxWidth(),
+        ) {
+            ThemePreset.entries.groupBy { it.accentHue }.forEach { (hue, presets) ->
+                val selected     = currentPreset.accentHue == hue
+                val previewColor = buildAppColors(hue, currentMode).primary
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(previewColor)
+                        .then(
+                            if (selected) Modifier.border(2.5.dp, colors.onSurface, CircleShape)
+                            else Modifier
+                        )
+                        .clickable {
+                            val target = presets.first { it.mode == currentMode }
+                            scope.launch { preferencesManager.setThemePreset(target.name) }
+                        },
+                )
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // ── Language ─────────────────────────────────────
+        SectionHeader(stringResource(R.string.settings_language), colors)
+        Spacer(Modifier.height(10.dp))
+        LanguagePicker(
+            current  = language,
+            colors   = colors,
+            onSelect = { tag ->
+                scope.launch { preferencesManager.setLanguage(tag) }
+                val localeList = if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                                 else LocaleListCompat.forLanguageTags(tag)
+                AppCompatDelegate.setApplicationLocales(localeList)
+            },
         )
 
         Spacer(Modifier.height(20.dp))
@@ -179,62 +242,6 @@ fun SettingsScreen(
         )
 
         Spacer(Modifier.height(24.dp))
-    }
-}
-
-// ── Theme preset picker ───────────────────────────────────
-
-@Composable
-private fun ThemePresetPicker(
-    currentName: String,
-    onSelect: (ThemePreset) -> Unit,
-    colors: AppColors,
-) {
-    val current = ThemePreset.entries.find { it.name == currentName } ?: ThemePreset.PURPLE_DARK
-
-    Column(Modifier.fillMaxWidth()) {
-        ThemePreset.entries.chunked(2).forEach { row ->
-            Row(
-                Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                row.forEach { preset ->
-                    val presetColors = buildAppColors(preset.accentHue, preset.mode)
-                    val isSelected   = preset == current
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(presetColors.cardSurface)
-                            .border(
-                                width = if (isSelected) 2.dp else 0.dp,
-                                color = if (isSelected) colors.primary else Color.Transparent,
-                                shape = RoundedCornerShape(12.dp),
-                            )
-                            .clickable { onSelect(preset) }
-                            .padding(10.dp),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            // Colour swatch row
-                            listOf(presetColors.primary, presetColors.secondary, presetColors.accent)
-                                .forEach { c ->
-                                    Box(Modifier.size(16.dp).clip(CircleShape).background(c))
-                                    Spacer(Modifier.width(3.dp))
-                                }
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text  = preset.label,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = presetColors.onSurface,
-                                maxLines = 1,
-                            )
-                        }
-                    }
-                }
-                // Pad if odd number of presets in row
-                if (row.size < 2) Spacer(Modifier.weight(1f))
-            }
-        }
     }
 }
 
@@ -439,6 +446,45 @@ fun LogViewerScreen(
 }
 
 // ── Shared composables ────────────────────────────────────
+
+@Composable
+private fun ToneChip(label: String, selected: Boolean, colors: AppColors, onClick: () -> Unit) {
+    val bg     = if (selected) colors.primary else colors.cardSurface
+    val border = if (selected) colors.primary else colors.outline
+    val text   = if (selected) (if (colors.isDark) Color.Black.copy(alpha = 0.85f) else Color.White)
+                 else colors.onSurfaceVariant
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(20.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelLarge, color = text)
+    }
+}
+
+@Composable
+private fun LanguagePicker(current: String, colors: AppColors, onSelect: (String) -> Unit) {
+    data class Lang(val tag: String, val labelRes: Int)
+    val langs = listOf(
+        Lang("",   R.string.language_system),
+        Lang("en", R.string.language_en),
+        Lang("sl", R.string.language_sl),
+        Lang("hu", R.string.language_hu),
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        langs.forEach { lang ->
+            ToneChip(
+                label    = stringResource(lang.labelRes),
+                selected = current == lang.tag,
+                colors   = colors,
+            ) { onSelect(lang.tag) }
+        }
+    }
+}
 
 @Composable
 private fun SectionHeader(label: String, colors: AppColors) {

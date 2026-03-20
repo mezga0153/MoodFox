@@ -30,6 +30,7 @@ class PreferencesManager @Inject constructor(
         private val KEY_THEME_PRESET           = stringPreferencesKey("theme_preset")
         private val KEY_ANALYSIS_DEFAULT_RANGE = intPreferencesKey("analysis_default_range")
         private val KEY_ONBOARDING_COMPLETE    = booleanPreferencesKey("onboarding_complete")
+        private val KEY_LANGUAGE               = stringPreferencesKey("language")
     }
 
     val selectedHelper: Flow<String> = context.dataStore.data.map { it[KEY_SELECTED_HELPER] ?: "fox" }
@@ -45,6 +46,8 @@ class PreferencesManager @Inject constructor(
     val themePreset: Flow<String> = context.dataStore.data.map { it[KEY_THEME_PRESET] ?: "PURPLE_DARK" }
     val analysisDefaultRange: Flow<Int> = context.dataStore.data.map { it[KEY_ANALYSIS_DEFAULT_RANGE] ?: 30 }
     val onboardingComplete: Flow<Boolean> = context.dataStore.data.map { it[KEY_ONBOARDING_COMPLETE] ?: false }
+    /** BCP-47 tag ("en", "sl", "hu") or "" for system default */
+    val language: Flow<String> = context.dataStore.data.map { it[KEY_LANGUAGE] ?: "" }
 
     suspend fun setSelectedHelper(value: String) = context.dataStore.edit { it[KEY_SELECTED_HELPER] = value }
     suspend fun setHelperEnabled(value: Boolean) = context.dataStore.edit { it[KEY_HELPER_ENABLED] = value }
@@ -61,4 +64,5 @@ class PreferencesManager @Inject constructor(
     suspend fun setThemePreset(value: String) = context.dataStore.edit { it[KEY_THEME_PRESET] = value }
     suspend fun setAnalysisDefaultRange(value: Int) = context.dataStore.edit { it[KEY_ANALYSIS_DEFAULT_RANGE] = value }
     suspend fun setOnboardingComplete(value: Boolean) = context.dataStore.edit { it[KEY_ONBOARDING_COMPLETE] = value }
+    suspend fun setLanguage(value: String) = context.dataStore.edit { it[KEY_LANGUAGE] = value }
 }
