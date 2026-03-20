@@ -33,3 +33,10 @@ google-services.json
 # Release keystore
 *.keystore
 *.jks
+
+# Android build outputs
+app/mobile/build/
+app/build/
+app/.gradle/
+*.apk
+*.aab

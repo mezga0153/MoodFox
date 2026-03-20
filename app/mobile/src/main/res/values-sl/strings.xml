@@ -36,12 +36,16 @@
     <string name="onboarding_page4_title">Prilagodi svojemu okusu</string>
     <string name="onboarding_page4_subtitle">Izberi pomočnika in barvno temo. Kasneje jih lahko spreminjaš.</string>
 
-    <!-- Check-in screen -->
+    <!-- Check-in screen (sl) -->
     <string name="checkin_title">Kako se počutiš?</string>
     <string name="checkin_mood_value">Razpoloženje: %d</string>
     <string name="checkin_note_hint">Kratka opomba…</string>
     <string name="checkin_causes_label">Kaj vpliva na tvoje razpoloženje?</string>
-    <string name="checkin_saved">Shranjeno</string>
+    <string name="checkin_saved">Shranjeno ✓</string>
+    <string name="checkin_save">Shrani vnos</string>
+    <string name="checkin_note_add">+ Dodaj opombo</string>
+    <string name="checkin_note_hide">Skrij opombo</string>
+    <string name="checkin_target_label">mirna cona: −2 do +2</string>
 
     <!-- Calendar screen -->
     <string name="calendar_title">Koledar</string>

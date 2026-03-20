@@ -41,7 +41,11 @@
     <string name="checkin_mood_value">Mood: %d</string>
     <string name="checkin_note_hint">Optional note…</string>
     <string name="checkin_causes_label">What\'s influencing your mood?</string>
-    <string name="checkin_saved">Saved</string>
+    <string name="checkin_saved">Saved ✓</string>
+    <string name="checkin_save">Save check-in</string>
+    <string name="checkin_note_add">+ Add a note</string>
+    <string name="checkin_note_hide">Hide note</string>
+    <string name="checkin_target_label">calm zone: −2 to +2</string>
 
     <!-- Calendar screen -->
     <string name="calendar_title">Calendar</string>

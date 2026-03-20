@@ -36,12 +36,16 @@
     <string name="onboarding_page4_title">Tedd személyessé</string>
     <string name="onboarding_page4_subtitle">Válassz segítőt és színtémát. Ezt később is módosíthatod.</string>
 
-    <!-- Check-in screen -->
+    <!-- Check-in screen (hu) -->
     <string name="checkin_title">Hogy érzed magad?</string>
     <string name="checkin_mood_value">Hangulat: %d</string>
     <string name="checkin_note_hint">Rövid megjegyzés…</string>
     <string name="checkin_causes_label">Mi befolyásolja a hangulatodat?</string>
-    <string name="checkin_saved">Mentve</string>
+    <string name="checkin_saved">Mentve ✓</string>
+    <string name="checkin_save">Check-in mentése</string>
+    <string name="checkin_note_add">+ Megyjegyzés hozzáadása</string>
+    <string name="checkin_note_hide">Megyjegyzés elrejtése</string>
+    <string name="checkin_target_label">nyugodt zóna: −2 tól +2 ig</string>
 
     <!-- Calendar screen -->
     <string name="calendar_title">Naptár</string>
