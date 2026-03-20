@@ -1,5 +1,7 @@
 package com.moodfox.ui.settings
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,9 +21,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.moodfox.R
 import com.moodfox.data.local.AppLogger
+import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
+import com.moodfox.domain.ReminderScheduler
 import com.moodfox.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -30,6 +34,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     preferencesManager: PreferencesManager,
+    reminderScheduler: ReminderScheduler,
+    moodEntryDao: com.moodfox.data.local.db.MoodEntryDao,
+    backupManager: BackupManager,
     onNavigateToCategories: () -> Unit,
     onNavigateToLogViewer: () -> Unit,
 ) {
@@ -39,8 +46,17 @@ fun SettingsScreen(
     val themePresetName by preferencesManager.themePreset.collectAsState(initial = "PURPLE_DARK")
     val weatherEnabled  by preferencesManager.weatherEnabled.collectAsState(initial = false)
     val remindersEnabled by preferencesManager.remindersEnabled.collectAsState(initial = false)
+    val reminderTimes   by preferencesManager.reminderTimes.collectAsState(initial = "[\"09:00\",\"13:00\",\"19:00\"]")
+    val quietStart      by preferencesManager.quietHoursStart.collectAsState(initial = "22:00")
+    val quietEnd        by preferencesManager.quietHoursEnd.collectAsState(initial = "08:00")
     val animationsEnabled by preferencesManager.animationsEnabled.collectAsState(initial = true)
     val reduceMotion    by preferencesManager.reduceMotion.collectAsState(initial = false)
+
+    val allEntries by moodEntryDao.getAll().collectAsState(initial = emptyList())
+    val context    = androidx.compose.ui.platform.LocalContext.current
+    val shareLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {}
 
     Column(
         modifier = Modifier
@@ -95,7 +111,13 @@ fun SettingsScreen(
             checked = remindersEnabled,
             icon    = Icons.Filled.NotificationsActive,
             colors  = colors,
-            onChange = { scope.launch { preferencesManager.setRemindersEnabled(it) } },
+            onChange = { enabled ->
+                scope.launch {
+                    preferencesManager.setRemindersEnabled(enabled)
+                    if (enabled) reminderScheduler.scheduleAll(reminderTimes, quietStart, quietEnd)
+                    else reminderScheduler.cancelAll()
+                }
+            },
         )
 
         Spacer(Modifier.height(20.dp))
@@ -122,7 +144,32 @@ fun SettingsScreen(
         )
 
         Spacer(Modifier.height(20.dp))
+        // ── Backup / export ──────────────────────
+        SectionHeader(stringResource(R.string.settings_backup), colors)
+        SettingsNavRow(
+            label   = stringResource(R.string.backup_export_csv),
+            icon    = Icons.Filled.FileDownload,
+            colors  = colors,
+            onClick = {
+                scope.launch {
+                    val intent = backupManager.exportCsv(allEntries)
+                    shareLauncher.launch(intent)
+                }
+            },
+        )
+        SettingsNavRow(
+            label   = stringResource(R.string.backup_export_json),
+            icon    = Icons.Filled.FileDownload,
+            colors  = colors,
+            onClick = {
+                scope.launch {
+                    val intent = backupManager.exportJson(allEntries)
+                    shareLauncher.launch(intent)
+                }
+            },
+        )
 
+        Spacer(Modifier.height(20.dp))
         // ── Debug ────────────────────────────────────────
         SettingsNavRow(
             label   = "Debug log",

@@ -1,8 +1,12 @@
 #!/bin/bash
 set -e
 
-FOX="/Users/tinem/dev/MoodFox/fox.png"
-RES="/Users/tinem/dev/MoodFox/app/mobile/src/main/res"
+# Resolve paths relative to the repo root (works from any cwd)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+FOX="$REPO_ROOT/fox.png"
+RES="$REPO_ROOT/app/mobile/src/main/res"
 
 gen() {
   density=$1; sz=$2; fgsz=$3

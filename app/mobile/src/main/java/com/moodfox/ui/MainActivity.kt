@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.*
 import com.moodfox.data.local.AppLogger
+import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntryDao
@@ -30,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var weatherService: WeatherService
     @Inject lateinit var reminderScheduler: ReminderScheduler
     @Inject lateinit var appLogger: AppLogger
+    @Inject lateinit var backupManager: BackupManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +60,7 @@ class MainActivity : AppCompatActivity() {
                     weatherService = weatherService,
                     reminderScheduler = reminderScheduler,
                     appLogger = appLogger,
+                    backupManager = backupManager,
                 )
             }
         }

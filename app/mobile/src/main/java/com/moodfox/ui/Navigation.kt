@@ -13,6 +13,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.moodfox.R
 import com.moodfox.data.local.AppLogger
+import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntryDao
@@ -46,6 +47,7 @@ fun MoodFoxNavGraph(
     weatherService: WeatherService,
     reminderScheduler: ReminderScheduler,
     appLogger: AppLogger,
+    backupManager: BackupManager,
 ) {
     val colors = LocalAppColors.current
     val navController = rememberNavController()
@@ -125,6 +127,9 @@ fun MoodFoxNavGraph(
             composable("settings") {
                 SettingsScreen(
                     preferencesManager = preferencesManager,
+                    reminderScheduler  = reminderScheduler,
+                    moodEntryDao       = moodEntryDao,
+                    backupManager      = backupManager,
                     onNavigateToCategories = { navController.navigate("settings/categories") },
                     onNavigateToLogViewer = { navController.navigate("settings/log_viewer") },
                 )
