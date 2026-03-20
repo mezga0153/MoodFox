@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -466,6 +467,7 @@ private fun ToneChip(label: String, selected: Boolean, colors: AppColors, onClic
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LanguagePicker(current: String, colors: AppColors, onSelect: (String) -> Unit) {
     data class Lang(val tag: String, val labelRes: Int)
@@ -475,7 +477,10 @@ private fun LanguagePicker(current: String, colors: AppColors, onSelect: (String
         Lang("sl", R.string.language_sl),
         Lang("hu", R.string.language_hu),
     )
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement   = Arrangement.spacedBy(8.dp),
+    ) {
         langs.forEach { lang ->
             ToneChip(
                 label    = stringResource(lang.labelRes),
