@@ -121,7 +121,7 @@
     <string name="cause_work">Delo</string>
     <string name="cause_family">Družina</string>
     <string name="cause_relationship">Razmerje</string>
-    <string name="cause_friends">Prijatelji / Družabnost</string>
+    <string name="cause_friends">Družba</string>
     <string name="cause_sleep">Spanje</string>
     <string name="cause_health">Zdravje</string>
     <string name="cause_exercise">Gibanje</string>
@@ -129,10 +129,10 @@
     <string name="cause_weather">Vreme</string>
     <string name="cause_money">Denar</string>
     <string name="cause_routine">Rutina</string>
-    <string name="cause_stress">Stres / Tesnoba</string>
+    <string name="cause_stress">Stres</string>
     <string name="cause_achievement">Dosežek</string>
     <string name="cause_rest">Počitek</string>
-    <string name="cause_nothing">Nič posebnega</string>
+    <string name="cause_nothing">Brez razloga</string>
     <string name="cause_other">Drugo</string>
 
     <!-- Helper names -->

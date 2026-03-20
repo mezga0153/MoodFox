@@ -140,10 +140,12 @@ fun SettingsScreen(
             current  = language,
             colors   = colors,
             onSelect = { tag ->
-                scope.launch { preferencesManager.setLanguage(tag) }
-                val localeList = if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                                 else LocaleListCompat.forLanguageTags(tag)
-                AppCompatDelegate.setApplicationLocales(localeList)
+                scope.launch {
+                    preferencesManager.setLanguage(tag)   // persist first
+                    val localeList = if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                                     else LocaleListCompat.forLanguageTags(tag)
+                    AppCompatDelegate.setApplicationLocales(localeList)
+                }
             },
         )
 

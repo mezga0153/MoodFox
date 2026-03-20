@@ -25,6 +25,7 @@ import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.ui.components.localizedCauseName
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
 import kotlinx.coroutines.flow.map
@@ -402,7 +403,7 @@ private fun EntryRow(
                         border = BorderStroke(1.dp, moodCol.copy(alpha = 0.35f)),
                     ) {
                         Text(
-                            text     = "${cat.emoji} ${cat.name}",
+                            text     = "${cat.emoji} ${localizedCauseName(cat)}",
                             style    = MaterialTheme.typography.labelMedium,
                             color    = colors.onSurface,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),

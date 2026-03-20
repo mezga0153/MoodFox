@@ -119,7 +119,7 @@
     <string name="cause_work">Munka</string>
     <string name="cause_family">Család</string>
     <string name="cause_relationship">Kapcsolat</string>
-    <string name="cause_friends">Barátok / Társasági élet</string>
+    <string name="cause_friends">Közösségi</string>
     <string name="cause_sleep">Alvás</string>
     <string name="cause_health">Egészség</string>
     <string name="cause_exercise">Mozgás</string>
@@ -127,10 +127,10 @@
     <string name="cause_weather">Időjárás</string>
     <string name="cause_money">Pénz</string>
     <string name="cause_routine">Rutin</string>
-    <string name="cause_stress">Stressz / Szorongás</string>
+    <string name="cause_stress">Stressz</string>
     <string name="cause_achievement">Siker</string>
     <string name="cause_rest">Pihenés</string>
-    <string name="cause_nothing">Semmi különös</string>
+    <string name="cause_nothing">Nincs oka</string>
     <string name="cause_other">Egyéb</string>
 
     <!-- Helper names -->

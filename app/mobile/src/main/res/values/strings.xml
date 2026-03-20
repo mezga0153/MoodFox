@@ -121,7 +121,7 @@
     <string name="cause_work">Work</string>
     <string name="cause_family">Family</string>
     <string name="cause_relationship">Relationship</string>
-    <string name="cause_friends">Friends / Social</string>
+    <string name="cause_friends">Social</string>
     <string name="cause_sleep">Sleep</string>
     <string name="cause_health">Health</string>
     <string name="cause_exercise">Exercise</string>
@@ -129,10 +129,10 @@
     <string name="cause_weather">Weather</string>
     <string name="cause_money">Money</string>
     <string name="cause_routine">Routine</string>
-    <string name="cause_stress">Stress / Anxiety</string>
+    <string name="cause_stress">Stress</string>
     <string name="cause_achievement">Achievement</string>
     <string name="cause_rest">Rest</string>
-    <string name="cause_nothing">Nothing specific</string>
+    <string name="cause_nothing">No clear reason</string>
     <string name="cause_other">Other</string>
 
     <!-- Helper names -->

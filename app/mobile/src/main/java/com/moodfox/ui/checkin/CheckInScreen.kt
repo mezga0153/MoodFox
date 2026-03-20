@@ -36,6 +36,7 @@ import com.moodfox.data.local.db.MoodEntryDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.data.remote.WeatherService
 import com.moodfox.ui.components.HelperBar
+import com.moodfox.ui.components.localizedCauseName
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
 import kotlinx.coroutines.launch
@@ -458,7 +459,7 @@ private fun CauseChip(
             Text(text = category.emoji, fontSize = 22.sp)
             Spacer(Modifier.height(4.dp))
             Text(
-                text      = category.name,
+                text      = localizedCauseName(category),
                 style     = MaterialTheme.typography.labelSmall,
                 color     = textColor,
                 textAlign = TextAlign.Center,
