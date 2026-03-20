@@ -2,6 +2,7 @@ package com.moodfox.ui.calendar
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,11 +21,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moodfox.R
+import com.moodfox.data.local.db.CauseCategory
+import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
 import kotlinx.coroutines.flow.map
+import org.json.JSONArray
 import java.time.*
 import java.time.format.TextStyle
 import java.util.*
@@ -55,14 +59,31 @@ private fun cellColor(avg: Float, count: Int, colors: AppColors): Color {
 
 // ── Screen ────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val SCALE_EMOJIS = mapOf(
+    -10 to "😭", -9 to "😭", -8 to "😭",
+    -7 to "😔",  -6 to "😔", -5 to "😔",
+    -4 to "😕",  -3 to "😕", -2 to "😕",
+    -1 to "😐",   0 to "😐",  1 to "😐",
+     2 to "🙂",   3 to "🙂",  4 to "🙂",
+     5 to "😊",   6 to "😊",  7 to "😊",
+     8 to "🤩",   9 to "🤩", 10 to "🤩",
+)
+
+private fun moodEmoji(value: Int) = SCALE_EMOJIS[value.coerceIn(-10, 10)] ?: "😐"
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun CalendarScreen(moodEntryDao: MoodEntryDao) {
+fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDao) {
     val colors = LocalAppColors.current
     val today  = LocalDate.now()
 
     var displayMonth by remember { mutableStateOf(YearMonth.from(today)) }
     var selectedDay  by remember { mutableStateOf<LocalDate?>(null) }
+
+    val allCategories by causeCategoryDao.getAll().collectAsState(initial = emptyList())
+    val categoryMap: Map<Long, CauseCategory> = remember(allCategories) {
+        allCategories.associateBy { it.id }
+    }
 
     // Load entries for ±1 month window so navigating stays fast
     val windowStart = displayMonth.minusMonths(1).atDay(1)
@@ -162,10 +183,11 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao) {
         if (selectedDay != null && selectedDayEntries.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
             DayDetailCard(
-                date    = selectedDay!!,
-                stats   = monthStats[selectedDay!!],
-                entries = selectedDayEntries,
-                colors  = colors,
+                date        = selectedDay!!,
+                stats       = monthStats[selectedDay!!],
+                entries     = selectedDayEntries,
+                categoryMap = categoryMap,
+                colors      = colors,
             )
         } else if (selectedDay != null) {
             Spacer(Modifier.height(16.dp))
@@ -261,6 +283,7 @@ private fun DayDetailCard(
     date: LocalDate,
     stats: DayStats?,
     entries: List<MoodEntry>,
+    categoryMap: Map<Long, CauseCategory>,
     colors: AppColors,
 ) {
     Surface(
@@ -307,15 +330,20 @@ private fun DayDetailCard(
 
             // Entry list
             entries.sortedBy { it.timestamp }.forEach { entry ->
-                EntryRow(entry = entry, colors = colors)
-                Spacer(Modifier.height(6.dp))
+                EntryRow(entry = entry, categoryMap = categoryMap, colors = colors)
+                Spacer(Modifier.height(10.dp))
             }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun EntryRow(entry: MoodEntry, colors: AppColors) {
+private fun EntryRow(
+    entry: MoodEntry,
+    categoryMap: Map<Long, CauseCategory>,
+    colors: AppColors,
+) {
     val time = Instant.ofEpochMilli(entry.timestamp)
         .atZone(ZoneId.systemDefault()).toLocalTime()
     val timeStr = "%02d:%02d".format(time.hour, time.minute)
@@ -326,40 +354,72 @@ private fun EntryRow(entry: MoodEntry, colors: AppColors) {
         else                  -> colors.primary
     }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(),
+    // Parse cause IDs from JSON
+    val causes: List<CauseCategory> = remember(entry.causeIds, categoryMap) {
+        val arr = JSONArray(entry.causeIds)
+        (0 until arr.length()).mapNotNull { categoryMap[arr.getLong(it)] }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.surface)
+            .padding(10.dp),
     ) {
-        Text(
-            text  = timeStr,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.onSurfaceVariant,
-            modifier = Modifier.width(44.dp),
-        )
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(moodCol.copy(alpha = 0.18f)),
-            contentAlignment = Alignment.Center,
-        ) {
+        // ── Top row: time · emoji · score ────────────────
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text     = moodStr,
-                fontSize = 11.sp,
-                color    = moodCol,
+                text  = timeStr,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.width(44.dp),
+            )
+            Text(
+                text     = moodEmoji(entry.moodValue),
+                fontSize = 22.sp,
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text       = moodStr,
+                style      = MaterialTheme.typography.titleMedium,
+                color      = moodCol,
                 fontWeight = FontWeight.Bold,
             )
         }
-        Spacer(Modifier.width(10.dp))
-        Column(Modifier.weight(1f)) {
-            if (!entry.note.isNullOrBlank()) {
-                Text(
-                    text  = entry.note,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onSurface,
-                    maxLines = 2,
-                )
+
+        // ── Cause chips ───────────────────────────────────
+        if (causes.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement   = Arrangement.spacedBy(6.dp),
+            ) {
+                causes.forEach { cat ->
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = moodCol.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, moodCol.copy(alpha = 0.35f)),
+                    ) {
+                        Text(
+                            text     = "${cat.emoji} ${cat.name}",
+                            style    = MaterialTheme.typography.labelMedium,
+                            color    = colors.onSurface,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        )
+                    }
+                }
             }
+        }
+
+        // ── Note ──────────────────────────────────────────
+        if (!entry.note.isNullOrBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text  = entry.note,
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurface,
+            )
         }
     }
 }

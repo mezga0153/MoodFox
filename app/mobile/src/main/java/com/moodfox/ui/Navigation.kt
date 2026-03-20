@@ -119,7 +119,7 @@ fun MoodFoxNavGraph(
                 )
             }
             composable("calendar") {
-                CalendarScreen(moodEntryDao = moodEntryDao)
+                CalendarScreen(moodEntryDao = moodEntryDao, causeCategoryDao = causeCategoryDao)
             }
             composable("analysis") {
                 AnalysisScreen(moodEntryDao = moodEntryDao, causeCategoryDao = causeCategoryDao)
