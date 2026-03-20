@@ -32,7 +32,9 @@ import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.data.remote.WeatherService
+import com.moodfox.ui.components.HelperBar
 import com.moodfox.ui.theme.LocalAppColors
+import com.moodfox.ui.theme.AppColors
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 
@@ -74,11 +76,12 @@ fun CheckInScreen(
     var note         by remember { mutableStateOf("") }
     var saved        by remember { mutableStateOf(false) }
     var showNote     by remember { mutableStateOf(false) }
+    var lastSavedMood by remember { mutableIntStateOf(0) }
 
     // After save: briefly show feedback then reset
     LaunchedEffect(saved) {
         if (saved) {
-            kotlinx.coroutines.delay(1200)
+            kotlinx.coroutines.delay(2000)
             moodValue     = 0
             selectedCauses = emptySet()
             note          = ""
@@ -219,6 +222,7 @@ fun CheckInScreen(
                                 note      = note.trimEnd().ifEmpty { null },
                             )
                         )
+                        lastSavedMood = moodValue
                         saved = true
                     }
                 },
@@ -236,6 +240,14 @@ fun CheckInScreen(
                 )
             }
         }
+
+        // ── Helper reaction ──────────────────────────────
+        HelperBar(
+            moodValue = lastSavedMood,
+            visible   = saved,
+            colors    = colors,
+            modifier  = Modifier.padding(top = 12.dp),
+        )
 
         Spacer(Modifier.height(24.dp))
     }

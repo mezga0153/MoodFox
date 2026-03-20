@@ -75,6 +75,16 @@
     <string name="analysis_obs_swings">You have several large swings this period. The average looks fine but the ride is rough.</string>
     <string name="analysis_obs_low_mondays">Your average mood tends to be lower on Mondays.</string>
 
+    <!-- Reminders -->
+    <string name="reminder_title">How are you feeling?</string>
+    <string name="reminder_body">Take a moment to log your mood.</string>
+
+    <!-- Backup -->
+    <string name="backup_export_csv">Export as CSV</string>
+    <string name="backup_export_json">Export as JSON</string>
+    <string name="backup_done">Export complete</string>
+    <string name="backup_error">Export failed</string>
+
     <!-- Settings screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_theme">Color theme</string>

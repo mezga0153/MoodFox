@@ -75,6 +75,16 @@
     <string name="analysis_obs_swings">V tem obdobju je več večjih nihanj. Povprečje je sicer v redu, pot pa nihajne.</string>
     <string name="analysis_obs_low_mondays">Tvoje razpoloženje je v ponedeljek povprečno nižje.</string>
 
+    <!-- Reminders -->
+    <string name="reminder_title">Kako se počutiš?</string>
+    <string name="reminder_body">Zabeleži svoje razpoloženje.</string>
+
+    <!-- Backup -->
+    <string name="backup_export_csv">Izvozi kot CSV</string>
+    <string name="backup_export_json">Izvozi kot JSON</string>
+    <string name="backup_done">Izvoz zaključen</string>
+    <string name="backup_error">Izvoz ni uspel</string>
+
     <!-- Settings screen -->
     <string name="settings_title">Nastavitve</string>
     <string name="settings_theme">Barvna tema</string>

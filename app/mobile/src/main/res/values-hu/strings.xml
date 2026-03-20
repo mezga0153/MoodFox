@@ -75,6 +75,16 @@
     <string name="analysis_obs_swings">Ebben az időszakban több nagy kilengés volt. Az átlag rendben néz ki, de az út hullámzó.</string>
     <string name="analysis_obs_low_mondays">A hangulatod átlagosan alacsonyabb hétfőn.</string>
 
+    <!-- Reminders -->
+    <string name="reminder_title">Hogy érzed magad?</string>
+    <string name="reminder_body">Jegyezd fel a hangulatodat.</string>
+
+    <!-- Backup -->
+    <string name="backup_export_csv">Exportálás CSV-ként</string>
+    <string name="backup_export_json">Exportálás JSON-ként</string>
+    <string name="backup_done">Exportálás kész</string>
+    <string name="backup_error">Az exportálás sikertelen</string>
+
     <!-- Settings screen -->
     <string name="settings_title">Beállítások</string>
     <string name="settings_theme">Színtéma</string>
