@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -227,14 +228,6 @@ private fun MoodHero(moodValue: Int, displayColor: Color, colors: AppColors) {
         ) { emoji ->
             Text(text = emoji, fontSize = 80.sp)
         }
-        Spacer(Modifier.height(2.dp))
-        val valueStr = if (moodValue >= 0) "+$moodValue" else "$moodValue"
-        Text(
-            text       = valueStr,
-            fontSize   = 46.sp,
-            fontWeight = FontWeight.Bold,
-            color      = displayColor,
-        )
     }
 }
 
@@ -301,6 +294,14 @@ private fun MoodScaleSlider(value: Int, onChange: (Int) -> Unit, colors: AppColo
                         }
                     },
                 )
+            }
+            .pointerInput(trackWidthPx) {
+                detectTapGestures { offset ->
+                    if (trackWidthPx > 0f) {
+                        val raw = ((offset.x / trackWidthPx) * 20f - 10f)
+                        onChange(raw.toInt().coerceIn(-10, 10))
+                    }
+                }
             },
         contentAlignment = Alignment.Center,
     ) {
@@ -360,21 +361,26 @@ private fun MoodScaleSlider(value: Int, onChange: (Int) -> Unit, colors: AppColo
             )
         }
 
-        // 5 emoji anchors
+        // Numeric labels
+        val numericTicks = listOf(-10, -5, -2, 0, 2, 5, 10)
         Row(
             modifier              = Modifier.fillMaxWidth().padding(top = 40.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            SCALE_EMOJIS.keys.sorted().forEach { tick ->
+            numericTicks.forEach { tick ->
                 val isActive = tick == value
+                val label    = if (tick > 0) "+$tick" else "$tick"
                 Box(
                     modifier         = Modifier.weight(1f),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text      = SCALE_EMOJIS[tick] ?: "",
-                        fontSize  = if (isActive) 22.sp else 16.sp,
-                        textAlign = TextAlign.Center,
+                        text       = label,
+                        fontSize   = if (isActive) 13.sp else 11.sp,
+                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                        color      = if (isActive) moodColor(value, colors)
+                                     else colors.onSurfaceVariant.copy(alpha = 0.55f),
+                        textAlign  = TextAlign.Center,
                     )
                 }
             }
