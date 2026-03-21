@@ -2,14 +2,19 @@ package com.moodfox.ui.checkin
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.text.input.KeyboardType
 import com.moodfox.R
 import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
@@ -122,8 +128,11 @@ fun CheckInScreen(
     val displayColor by animateColorAsState(moodColor(moodValue, colors), tween(250), "dcolor")
 
     val context = LocalContext.current
-    var weatherSnapshotId by remember { mutableStateOf<Long?>(null) }
-    var weatherDisplay    by remember { mutableStateOf<String?>(null) }
+    var weatherSnapshotId    by remember { mutableStateOf<Long?>(null) }
+    var weatherDisplay        by remember { mutableStateOf<String?>(null) }
+    var detectedCondition     by remember { mutableStateOf<String?>(null) }
+    var detectedTempC         by remember { mutableStateOf<Float?>(null) }
+    var showWeatherOverride   by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -132,8 +141,10 @@ fun CheckInScreen(
             scope.launch {
                 val loc  = weatherService.getLastKnownLocation(context) ?: return@launch
                 val snap = weatherService.fetchCurrent(loc.latitude, loc.longitude) ?: return@launch
-                weatherSnapshotId = weatherSnapshotDao.insert(snap)
-                weatherDisplay = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
+                weatherSnapshotId    = weatherSnapshotDao.insert(snap)
+                detectedCondition    = snap.condition
+                detectedTempC        = snap.temperatureC
+                weatherDisplay       = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
             }
         }
     }
@@ -147,7 +158,9 @@ fun CheckInScreen(
             val loc  = weatherService.getLastKnownLocation(context) ?: return@LaunchedEffect
             val snap = weatherService.fetchCurrent(loc.latitude, loc.longitude) ?: return@LaunchedEffect
             weatherSnapshotId = weatherSnapshotDao.insert(snap)
-            weatherDisplay = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
+            detectedCondition = snap.condition
+            detectedTempC     = snap.temperatureC
+            weatherDisplay    = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
         } else {
             permissionLauncher.launch(
                 arrayOf(
@@ -229,16 +242,52 @@ fun CheckInScreen(
             if (weatherEnabled && weatherDisplay != null) {
                 Spacer(Modifier.height(8.dp))
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = colors.cardSurface,
+                    shape    = RoundedCornerShape(20.dp),
+                    color    = colors.cardSurface,
+                    modifier = Modifier.clickable { showWeatherOverride = true },
                 ) {
-                    Text(
-                        text     = weatherDisplay!!,
-                        style    = MaterialTheme.typography.labelMedium,
-                        color    = colors.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                    ) {
+                        Text(
+                            text  = weatherDisplay!!,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = colors.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            imageVector        = Icons.Filled.EditNote,
+                            contentDescription = "Override weather",
+                            tint               = colors.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier           = Modifier.size(14.dp),
+                        )
+                    }
                 }
+            }
+
+            if (showWeatherOverride) {
+                WeatherOverrideSheet(
+                    colors             = colors,
+                    initialCondition   = detectedCondition,
+                    initialTempC       = detectedTempC,
+                    onDismiss          = { showWeatherOverride = false },
+                    onConfirm = { condition, tempC ->
+                        showWeatherOverride = false
+                        scope.launch {
+                            val snap = com.moodfox.data.local.db.WeatherSnapshot(
+                                timestamp    = System.currentTimeMillis(),
+                                city         = "Manual",
+                                temperatureC = tempC,
+                                condition    = condition,
+                                isRaining    = "rain" in condition.lowercase() || "drizzle" in condition.lowercase(),
+                                humidity     = 0f,
+                            )
+                            weatherSnapshotId = weatherSnapshotDao.insert(snap)
+                            weatherDisplay = "${conditionEmoji(condition)} $condition ${tempC.toInt()}°C"
+                        }
+                    },
+                )
             }
         }
 
@@ -643,4 +692,105 @@ private fun NoteCard(
     }
 }
 
+// ── Weather override sheet ────────────────────────────────
+private val WEATHER_CONDITIONS = listOf(
+    "Clear", "Sunny", "Partly cloudy", "Cloudy", "Overcast",
+    "Drizzle", "Rainy", "Showers", "Thunderstorm", "Snowy", "Foggy",
+)
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WeatherOverrideSheet(
+    colors: AppColors,
+    initialCondition: String?,
+    initialTempC: Float?,
+    onDismiss: () -> Unit,
+    onConfirm: (condition: String, tempC: Float) -> Unit,
+) {
+    var selectedCondition by remember {
+        mutableStateOf(initialCondition?.let { ic ->
+            WEATHER_CONDITIONS.firstOrNull { it.equals(ic, ignoreCase = true) } ?: WEATHER_CONDITIONS[0]
+        } ?: WEATHER_CONDITIONS[0])
+    }
+    var tempText by remember { mutableStateOf(initialTempC?.toInt()?.toString() ?: "20") }
+
+    ModalBottomSheet(
+        onDismissRequest  = onDismiss,
+        containerColor    = colors.cardSurface,
+        contentColor      = colors.onSurface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text       = "Set weather manually",
+                style      = MaterialTheme.typography.titleMedium,
+                color      = colors.onSurface,
+                fontWeight = FontWeight.SemiBold,
+            )
+
+            // Condition chips
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement   = Arrangement.spacedBy(8.dp),
+            ) {
+                WEATHER_CONDITIONS.forEach { cond ->
+                    val selected = cond == selectedCondition
+                    Surface(
+                        shape    = RoundedCornerShape(20.dp),
+                        color    = if (selected) colors.primary.copy(alpha = 0.2f) else colors.cardSurface,
+                        border   = BorderStroke(1.dp, if (selected) colors.primary else colors.outline.copy(alpha = 0.4f)),
+                        modifier = Modifier.clickable { selectedCondition = cond },
+                    ) {
+                        Text(
+                            text     = "${conditionEmoji(cond)} $cond",
+                            style    = MaterialTheme.typography.bodyMedium,
+                            color    = if (selected) colors.primary else colors.onSurface,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
+                }
+            }
+
+            // Temperature input
+            OutlinedTextField(
+                value         = tempText,
+                onValueChange = { if (it.length <= 5) tempText = it },
+                label         = { Text("Temperature (°C)", color = colors.onSurfaceVariant) },
+                singleLine    = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor   = colors.primary,
+                    unfocusedBorderColor = colors.outline,
+                    focusedTextColor     = colors.onSurface,
+                    unfocusedTextColor   = colors.onSurface,
+                    cursorColor          = colors.primary,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Button(
+                onClick  = {
+                    val temp = tempText.toFloatOrNull() ?: 20f
+                    onConfirm(selectedCondition, temp)
+                },
+                colors   = ButtonDefaults.buttonColors(containerColor = colors.primary),
+                shape    = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                Text(
+                    text       = "Apply",
+                    style      = MaterialTheme.typography.titleSmall,
+                    color      = if (colors.isDark) Color.Black.copy(alpha = 0.85f) else Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+    }
+}
