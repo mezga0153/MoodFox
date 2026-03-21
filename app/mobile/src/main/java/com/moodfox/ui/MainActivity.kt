@@ -6,7 +6,9 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.*
+import androidx.core.os.LocaleListCompat
 import com.moodfox.data.local.AppLogger
 import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
@@ -19,6 +21,8 @@ import com.moodfox.ui.theme.MoodFoxTheme
 import com.moodfox.ui.theme.ThemePreset
 import com.moodfox.ui.theme.buildAppColors
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -36,8 +40,17 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appLogger.user("App opened")
-        // AppCompatDelegate.setApplicationLocales() persists locale across restarts automatically.
-        // We just need to call it when the user changes language in settings (done in SettingsScreen).
+
+        // On first launch language is "". Auto-pick system language (en/sl/hu) or fall back to en.
+        val supportedLanguages = listOf("en", "sl", "hu")
+        val savedLanguage = runBlocking { preferencesManager.language.first() }
+        if (savedLanguage.isEmpty()) {
+            val systemLang = resources.configuration.locales[0].language
+            val picked = if (systemLang in supportedLanguages) systemLang else "en"
+            runBlocking { preferencesManager.setLanguage(picked) }
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(picked))
+        }
+
         enableEdgeToEdge()
         setContent {
             val themePresetName by preferencesManager.themePreset.collectAsState(initial = "PURPLE_DARK")
