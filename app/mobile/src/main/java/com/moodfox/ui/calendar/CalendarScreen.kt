@@ -383,7 +383,7 @@ private fun CalendarListView(
 
                     if (isExpanded && stats != null) {
                         HorizontalDivider(color = colors.outline.copy(alpha = 0.3f))
-                        stats.entries.sortedBy { it.timestamp }.forEach { entry ->
+                        stats.entries.sortedByDescending { it.timestamp }.forEach { entry ->
                             val time         = Instant.ofEpochMilli(entry.timestamp).atZone(ZoneId.systemDefault()).toLocalTime()
                             val timeStr      = "%02d:%02d".format(time.hour, time.minute)
                             val ec           = moodColor(entry.moodValue.toFloat(), colors)
