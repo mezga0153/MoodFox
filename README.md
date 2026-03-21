@@ -23,15 +23,15 @@ No cloud. No subscription. No fake AI psychology. Just your data, on your device
 ## Screenshots
 
 <div align="center">
-  <img src="screenshots/checkin.png" width="18%" alt="Check-in" />
+  <a href="screenshots/checkin.png"><img src="screenshots/checkin.png" width="18%" alt="Check-in" /></a>
   &nbsp;
-  <img src="screenshots/calendar.png" width="18%" alt="Calendar" />
+  <a href="screenshots/calendar.png"><img src="screenshots/calendar.png" width="18%" alt="Calendar" /></a>
   &nbsp;
-  <img src="screenshots/analysis.png" width="18%" alt="Analysis" />
+  <a href="screenshots/analysis.png"><img src="screenshots/analysis.png" width="18%" alt="Analysis" /></a>
   &nbsp;
-  <img src="screenshots/analysis_weather.png" width="18%" alt="Weather correlation" />
+  <a href="screenshots/analysis_weather.png"><img src="screenshots/analysis_weather.png" width="18%" alt="Weather correlation" /></a>
   &nbsp;
-  <img src="screenshots/settings.png" width="18%" alt="Settings" />
+  <a href="screenshots/settings.png"><img src="screenshots/settings.png" width="18%" alt="Settings" /></a>
 </div>
 
 <div align="center">
