@@ -3,6 +3,7 @@ package com.moodfox.ui.calendar
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -97,6 +102,7 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
     var displayMonth by remember { mutableStateOf(YearMonth.from(today)) }
     var selectedDay  by remember { mutableStateOf<LocalDate?>(null) }
     var showAddSheet by remember { mutableStateOf(false) }
+    var listView     by remember { mutableStateOf(false) }
 
     val allCategories by causeCategoryDao.getAll().collectAsState(initial = emptyList())
     val categoryMap: Map<Long, CauseCategory> = remember(allCategories) {
@@ -156,20 +162,40 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
                 color = colors.onSurface,
                 fontWeight = FontWeight.SemiBold,
             )
-            IconButton(
-                onClick = { displayMonth = displayMonth.plusMonths(1) },
-                enabled = displayMonth < YearMonth.from(today),
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = if (displayMonth < YearMonth.from(today)) colors.primary else colors.outline,
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Grid / List toggle
+                IconButton(onClick = { listView = !listView }) {
+                    Icon(
+                        imageVector = if (listView) Icons.Filled.CalendarMonth else Icons.Filled.ViewList,
+                        contentDescription = if (listView) "Grid view" else "List view",
+                        tint = colors.primary,
+                    )
+                }
+                IconButton(
+                    onClick = { displayMonth = displayMonth.plusMonths(1) },
+                    enabled = displayMonth < YearMonth.from(today),
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = if (displayMonth < YearMonth.from(today)) colors.primary else colors.outline,
+                    )
+                }
             }
         }
 
         Spacer(Modifier.height(8.dp))
 
+        if (listView) {
+            // ── List view ─────────────────────────────────
+            CalendarListView(
+                month       = displayMonth,
+                today       = today,
+                monthStats  = monthStats,
+                categoryMap = categoryMap,
+                colors      = colors,
+            )
+        } else {
         // ── Weekday header ───────────────────────────────
         val dayNames = (1..7).map {
             DayOfWeek.of(it).getDisplayName(TextStyle.NARROW, Locale.getDefault())
@@ -234,6 +260,7 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
                 Text("Add entry", color = colors.primary)
             }
         }
+        } // end else (grid view)
     }
 
     // ── Add entry bottom sheet ───────────────────────────
@@ -250,6 +277,161 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
             },
             colors           = colors,
         )
+    }
+}
+
+// ── Calendar list view ────────────────────────────────────
+
+@Composable
+private fun CalendarListView(
+    month: YearMonth,
+    today: LocalDate,
+    monthStats: Map<LocalDate, DayStats>,
+    categoryMap: Map<Long, CauseCategory>,
+    colors: AppColors,
+) {
+    val daysWithEntries = remember(monthStats) {
+        (1..month.lengthOfMonth())
+            .map { month.atDay(it) }
+            .filter { (monthStats[it]?.entries?.size ?: 0) > 0 && it <= today }
+            .reversed()
+    }
+    var expandedDay by remember { mutableStateOf<LocalDate?>(null) }
+
+    if (daysWithEntries.isEmpty()) {
+        Box(Modifier.fillMaxWidth().padding(top = 32.dp), contentAlignment = Alignment.Center) {
+            Text(
+                text  = "No entries this month",
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurfaceVariant,
+            )
+        }
+        return
+    }
+
+    androidx.compose.foundation.lazy.LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(daysWithEntries, key = { it.toString() }) { date ->
+            val stats    = monthStats[date]!!
+            val isExpanded = expandedDay == date
+            val avgColor = moodColor(stats.avg, colors)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.cardSurface)
+                    .clickable { expandedDay = if (isExpanded) null else date },
+            ) {
+                // Header row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Date
+                    Column(modifier = Modifier.width(52.dp)) {
+                        Text(
+                            text  = date.dayOfMonth.toString(),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = colors.onSurface,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text  = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.onSurfaceVariant,
+                        )
+                    }
+                    // Avg score bar
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(colors.outline.copy(alpha = 0.3f)),
+                    ) {
+                        val fraction = ((stats.avg + 10f) / 20f).coerceIn(0f, 1f)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(fraction)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(avgColor),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    // Avg label + emoji
+                    Text(
+                        text  = if (stats.avg >= 0f) "+%.1f".format(stats.avg) else "%.1f".format(stats.avg),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = avgColor,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text  = moodEmoji(stats.avg.toInt()),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null,
+                        tint = colors.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                // Expanded: show individual entries
+                if (isExpanded) {
+                    HorizontalDivider(color = colors.outline.copy(alpha = 0.4f))
+                    stats.entries.sortedBy { it.timestamp }.forEach { entry ->
+                        val time = Instant.ofEpochMilli(entry.timestamp)
+                            .atZone(ZoneId.systemDefault()).toLocalTime()
+                        val timeStr = "%02d:%02d".format(time.hour, time.minute)
+                        val entryColor = moodColor(entry.moodValue.toFloat(), colors)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text  = timeStr,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = colors.onSurfaceVariant,
+                                modifier = Modifier.width(40.dp),
+                            )
+                            Text(
+                                text  = moodEmoji(entry.moodValue),
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text  = if (entry.moodValue >= 0) "+${entry.moodValue}" else "${entry.moodValue}",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = entryColor,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            if (entry.note != null) {
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text     = entry.note,
+                                    style    = MaterialTheme.typography.bodySmall,
+                                    color    = colors.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                }
+            }
+        }
+        item { Spacer(Modifier.height(16.dp)) }
     }
 }
 
