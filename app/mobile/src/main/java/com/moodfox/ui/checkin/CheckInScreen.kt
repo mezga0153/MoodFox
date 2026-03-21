@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -82,7 +83,35 @@ private val SCALE_EMOJIS = mapOf(
     10  to "🤯",
 )
 
-private fun emojiForValue(value: Int): String = SCALE_EMOJIS[value.coerceIn(-10, 10)] ?: "🙂"
+internal fun emojiForValue(value: Int): String = SCALE_EMOJIS[value.coerceIn(-10, 10)] ?: "🙂"
+
+internal fun foxDrawableForValue(value: Int): Int {
+    val v = value.coerceIn(-10, 10)
+    return when (v) {
+        -10 -> R.drawable.fox_mood_neg10
+        -9  -> R.drawable.fox_mood_neg9
+        -8  -> R.drawable.fox_mood_neg8
+        -7  -> R.drawable.fox_mood_neg7
+        -6  -> R.drawable.fox_mood_neg6
+        -5  -> R.drawable.fox_mood_neg5
+        -4  -> R.drawable.fox_mood_neg4
+        -3  -> R.drawable.fox_mood_neg3
+        -2  -> R.drawable.fox_mood_neg2
+        -1  -> R.drawable.fox_mood_neg1
+        0   -> R.drawable.fox_mood_0
+        1   -> R.drawable.fox_mood_1
+        2   -> R.drawable.fox_mood_2
+        3   -> R.drawable.fox_mood_3
+        4   -> R.drawable.fox_mood_4
+        5   -> R.drawable.fox_mood_5
+        6   -> R.drawable.fox_mood_6
+        7   -> R.drawable.fox_mood_7
+        8   -> R.drawable.fox_mood_8
+        9   -> R.drawable.fox_mood_9
+        10  -> R.drawable.fox_mood_10
+        else -> R.drawable.fox_mood_0
+    }
+}
 
 // ── Mood color ────────────────────────────────────────────
 @Composable
@@ -112,6 +141,7 @@ fun CheckInScreen(
     weatherService: WeatherService,
     weatherEnabled: Boolean,
     manualCity: String?,
+    characterMode: String = "fox",
 ) {
     val colors = LocalAppColors.current
     val scope  = rememberCoroutineScope()
@@ -215,7 +245,7 @@ fun CheckInScreen(
                 .padding(top = 28.dp, bottom = 100.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            MoodHero(moodValue = moodValue, displayColor = displayColor, colors = colors)
+            MoodHero(moodValue = moodValue, displayColor = displayColor, colors = colors, characterMode = characterMode)
 
             Spacer(Modifier.height(24.dp))
 
@@ -381,7 +411,7 @@ fun CheckInScreen(
 
 // ── Mood hero ─────────────────────────────────────────────
 @Composable
-private fun MoodHero(moodValue: Int, displayColor: Color, colors: AppColors) {
+private fun MoodHero(moodValue: Int, displayColor: Color, colors: AppColors, characterMode: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text  = stringResource(R.string.checkin_title),
@@ -389,19 +419,26 @@ private fun MoodHero(moodValue: Int, displayColor: Color, colors: AppColors) {
             color = colors.onSurfaceVariant,
         )
         Spacer(Modifier.height(14.dp))
-        AnimatedContent(
-            targetState    = emojiForValue(moodValue),
-            transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) },
-            label          = "heroEmoji",
-        ) { emoji ->
-            Text(text = emoji, fontSize = 80.sp)
-        }
-    }
+        if (characterMode == "fox") {
+            Image(
+                painter = painterResource(foxDrawableForValue(moodValue)),
+                contentDescription = "Mood $moodValue",
+                modifier = Modifier.size(120.dp),
+            )
+        } else {
+            Crossfade(
+                targetState = moodValue,
+                animationSpec = tween(180),
+                label = "heroMood",
+            ) { value ->
+                Text(text = emojiForValue(value), fontSize = 80.sp)
+            }
+        }    }
 }
 
 // ── Slider card ───────────────────────────────────────────
 @Composable
-private fun SliderCard(value: Int, onChange: (Int) -> Unit, colors: AppColors) {
+internal fun SliderCard(value: Int, onChange: (Int) -> Unit, colors: AppColors) {
     Surface(
         shape    = RoundedCornerShape(20.dp),
         color    = colors.cardSurface,
@@ -418,7 +455,7 @@ private fun SliderCard(value: Int, onChange: (Int) -> Unit, colors: AppColors) {
 
 // ── Mood scale slider ─────────────────────────────────────
 @Composable
-private fun MoodScaleSlider(value: Int, onChange: (Int) -> Unit, colors: AppColors) {
+internal fun MoodScaleSlider(value: Int, onChange: (Int) -> Unit, colors: AppColors) {
     val density = LocalDensity.current
     var trackWidthPx by remember { mutableFloatStateOf(0f) }
     val thumbColor by animateColorAsState(moodColor(value, colors), tween(200), label = "thumb")
@@ -551,7 +588,7 @@ private fun MoodScaleSlider(value: Int, onChange: (Int) -> Unit, colors: AppColo
 
 // ── Causes card ───────────────────────────────────────────
 @Composable
-private fun CausesCard(
+internal fun CausesCard(
     categories: List<CauseCategory>,
     selected: Set<Long>,
     onToggle: (Long) -> Unit,
@@ -614,7 +651,7 @@ private fun CausesCard(
 }
 
 @Composable
-private fun CauseChip(
+internal fun CauseChip(
     category: CauseCategory,
     selected: Boolean,
     onClick: () -> Unit,
@@ -651,7 +688,7 @@ private fun CauseChip(
 
 // ── Note card ─────────────────────────────────────────────
 @Composable
-private fun NoteCard(
+internal fun NoteCard(
     note: String,
     showNote: Boolean,
     onToggle: () -> Unit,

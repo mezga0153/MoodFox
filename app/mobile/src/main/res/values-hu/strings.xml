@@ -158,6 +158,7 @@
 
     <!-- Helper names -->
     <string name="helper_fox">Róka</string>
+    <string name="helper_emoji">Emojik</string>
     <string name="helper_cat">Macska</string>
     <string name="helper_bunny">Nyuszi</string>
     <string name="helper_panda">Panda</string>
