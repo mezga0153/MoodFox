@@ -52,6 +52,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
@@ -202,7 +204,8 @@ fun CheckInScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(screenGradient),
+            .background(screenGradient)
+            .imePadding(),
     ) {
         // ── Scrollable content ────────────────────────────
         Column(
@@ -647,6 +650,8 @@ private fun NoteCard(
     onNoteChange: (String) -> Unit,
     colors: AppColors,
 ) {
+    val noteScope = rememberCoroutineScope()
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
     Surface(
         shape    = RoundedCornerShape(20.dp),
         color    = colors.cardSurface,
@@ -681,13 +686,19 @@ private fun NoteCard(
             AnimatedVisibility(visible = showNote) {
                 Column {
                     Spacer(Modifier.height(10.dp))
+                    LaunchedEffect(note) {
+                        bringIntoViewRequester.bringIntoView()
+                    }
                     OutlinedTextField(
                         value         = note,
                         onValueChange = onNoteChange,
                         placeholder   = {
                             Text(stringResource(R.string.checkin_note_hint), color = colors.onSurfaceVariant)
                         },
-                        modifier      = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                        modifier      = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester)
+                            .bringIntoViewRequester(bringIntoViewRequester),
                         colors        = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor   = colors.primary,
                             unfocusedBorderColor = colors.outline,
