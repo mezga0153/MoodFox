@@ -678,13 +678,21 @@ private fun NoteCard(
                     modifier           = Modifier.size(16.dp),
                 )
                 Spacer(Modifier.width(10.dp))
-                Text(
-                    text     = if (note.isBlank()) stringResource(R.string.checkin_note_add) else note,
-                    style    = MaterialTheme.typography.bodyMedium,
-                    color    = if (note.isBlank()) colors.onSurfaceVariant else colors.onSurface,
-                    maxLines = if (showNote) Int.MAX_VALUE else 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                if (!showNote) {
+                    Text(
+                        text     = if (note.isBlank()) stringResource(R.string.checkin_note_add) else note,
+                        style    = MaterialTheme.typography.bodyMedium,
+                        color    = if (note.isBlank()) colors.onSurfaceVariant else colors.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } else {
+                    Text(
+                        text  = stringResource(R.string.checkin_note_add),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onSurfaceVariant,
+                    )
+                }
             }
             val focusRequester = remember { FocusRequester() }
             LaunchedEffect(showNote) {
