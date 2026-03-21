@@ -3,6 +3,9 @@
   <h1>MoodFox</h1>
   <p><strong>Your mood. Your patterns. No nonsense.</strong></p>
   <p>
+    <a href="https://play.google.com/store/apps/details?id=com.moodfox">
+      <img src="https://img.shields.io/badge/Google_Play-Download-59D8A0?style=flat-square&logo=google-play&logoColor=white" />
+    </a>
     <a href="https://github.com/mezga0153/MoodFox/releases/tag/v1.0.0">
       <img src="https://img.shields.io/badge/version-1.0.0-6C9CFF?style=flat-square" />
     </a>
@@ -70,7 +73,11 @@ MoodFox actively discourages "mood hacking" toward constant highs. A calm, stabl
 
 ## Download
 
-Grab the APK from the [latest release](https://github.com/mezga0153/MoodFox/releases/tag/v1.0.0) and sideload it, or wait for the Play Store listing.
+<a href="https://play.google.com/store/apps/details?id=com.moodfox">
+  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60" alt="Get it on Google Play" />
+</a>
+
+Or grab the APK directly from the [latest GitHub release](https://github.com/mezga0153/MoodFox/releases/tag/v1.0.0) and sideload it.
 
 ---
 
