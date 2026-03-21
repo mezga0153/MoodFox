@@ -92,4 +92,4 @@ Architecture: local-first, no ViewModels, DAOs straight into composables. Contro
 
 ## License
 
-[Apache 2.0](LICENSE)
+[MIT](LICENSE)
