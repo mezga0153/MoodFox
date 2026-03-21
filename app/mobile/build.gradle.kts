@@ -115,4 +115,7 @@ dependencies {
 
     // DataStore
     implementation(libs.datastore.preferences)
+
+    // Drag-to-reorder
+    implementation(libs.reorderable)
 }

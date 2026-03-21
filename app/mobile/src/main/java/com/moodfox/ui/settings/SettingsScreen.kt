@@ -6,6 +6,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -16,9 +19,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,6 +34,8 @@ import com.moodfox.data.local.AppLogger
 import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategory
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.domain.ReminderScheduler
 import com.moodfox.ui.theme.*
@@ -252,6 +260,7 @@ fun SettingsScreen(
 
 // ── Category manager ──────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryManagerScreen(
     causeCategoryDao: CauseCategoryDao,
@@ -259,14 +268,29 @@ fun CategoryManagerScreen(
 ) {
     val colors = LocalAppColors.current
     val scope  = rememberCoroutineScope()
-    val categories by causeCategoryDao.getAll().collectAsState(initial = emptyList())
+    val dbCategories by causeCategoryDao.getAll().collectAsState(initial = emptyList())
+
+    // Local mutable list for immediate drag feedback
+    var localList by remember(dbCategories) { mutableStateOf(dbCategories) }
 
     var showAddDialog by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+
+    val lazyListState = rememberLazyListState()
+    val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        localList = localList.toMutableList().also { it.add(to.index, it.removeAt(from.index)) }
+    }
+
+    // Persist new order whenever localList changes (debounced by coroutine)
+    LaunchedEffect(localList) {
+        causeCategoryDao.updateSortOrders(
+            localList.mapIndexed { index, cat -> cat.id to index }
+        )
+    }
 
     Scaffold(
         containerColor = colors.surface,
         topBar = {
-            @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
                 title = { Text(stringResource(R.string.categories_title), color = colors.onSurface) },
                 navigationIcon = {
@@ -283,81 +307,84 @@ fun CategoryManagerScreen(
             )
         },
     ) { padding ->
-        Column(
+        LazyColumn(
+            state = lazyListState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(horizontal = 16.dp),
         ) {
-            categories.forEach { cat ->
-                CategoryRow(
-                    category = cat,
-                    colors   = colors,
-                    onToggleActive = {
-                        scope.launch { causeCategoryDao.update(cat.copy(isActive = !cat.isActive)) }
-                    },
-                    onDelete = {
-                        scope.launch { causeCategoryDao.delete(cat) }
-                    },
-                )
+            items(localList, key = { it.id }) { cat ->
+                ReorderableItem(reorderState, key = cat.id) { isDragging ->
+                    val elevation = if (isDragging) 4.dp else 0.dp
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(elevation)
+                            .background(if (isDragging) colors.cardSurface else Color.Transparent),
+                    ) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            // Drag handle — long-press to drag
+                            Icon(
+                                imageVector = Icons.Filled.DragHandle,
+                                contentDescription = "Drag to reorder",
+                                tint = colors.onSurfaceVariant,
+                                modifier = Modifier
+                                    .draggableHandle(
+                                        onDragStarted = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                        onDragStopped = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                    )
+                                    .padding(end = 8.dp),
+                            )
+                            Text(cat.emoji, style = MaterialTheme.typography.titleLarge)
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                cat.name,
+                                style    = MaterialTheme.typography.bodyLarge,
+                                color    = if (cat.isActive) colors.onSurface else colors.onSurfaceVariant,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Switch(
+                                checked         = cat.isActive,
+                                onCheckedChange = { scope.launch { causeCategoryDao.update(cat.copy(isActive = !cat.isActive)) } },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor   = colors.primary,
+                                    checkedTrackColor   = colors.primaryContainer,
+                                    uncheckedThumbColor = colors.onSurfaceVariant,
+                                    uncheckedTrackColor = colors.outline,
+                                ),
+                            )
+                            if (!cat.isDefault) {
+                                IconButton(onClick = { scope.launch { causeCategoryDao.delete(cat) } }) {
+                                    Icon(Icons.Filled.Delete, null, tint = colors.error)
+                                }
+                            }
+                        }
+                        HorizontalDivider(color = colors.outline)
+                    }
+                }
             }
-            Spacer(Modifier.height(24.dp))
+            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 
     if (showAddDialog) {
         AddCategoryDialog(
-            onDismiss  = { showAddDialog = false },
+            onDismiss = { showAddDialog = false },
             onConfirm  = { name, emoji ->
                 scope.launch {
-                    val next = (categories.maxOfOrNull { it.sortOrder } ?: 0) + 1
+                    val next = (localList.maxOfOrNull { it.sortOrder } ?: 0) + 1
                     causeCategoryDao.insert(CauseCategory(name = name, emoji = emoji, sortOrder = next, isDefault = false))
                 }
                 showAddDialog = false
             },
         )
     }
-}
-
-@Composable
-private fun CategoryRow(
-    category: CauseCategory,
-    colors: AppColors,
-    onToggleActive: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(category.emoji, style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.width(12.dp))
-        Text(
-            category.name,
-            style  = MaterialTheme.typography.bodyLarge,
-            color  = if (category.isActive) colors.onSurface else colors.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        Switch(
-            checked  = category.isActive,
-            onCheckedChange = { onToggleActive() },
-            colors   = SwitchDefaults.colors(
-                checkedThumbColor       = colors.primary,
-                checkedTrackColor       = colors.primaryContainer,
-                uncheckedThumbColor     = colors.onSurfaceVariant,
-                uncheckedTrackColor     = colors.outline,
-            ),
-        )
-        if (!category.isDefault) {
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, null, tint = colors.error)
-            }
-        }
-    }
-    HorizontalDivider(color = colors.outline)
 }
 
 @Composable

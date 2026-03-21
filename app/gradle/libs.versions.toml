@@ -14,6 +14,7 @@ appcompat = "1.7.0"
 activity-compose = "1.9.3"
 hilt-navigation-compose = "1.2.0"
 datastore = "1.1.1"
+reorderable = "2.4.3"
 
 [libraries]
 # Compose BOM
@@ -62,6 +63,9 @@ ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlin
 
 # DataStore
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+
+# Reorderable
+reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.ref = "reorderable" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
