@@ -158,4 +158,12 @@
     <string name="analysis_weather_title">Weather &amp; mood</string>
     <string name="analysis_weather_rainy">🌧️ Rainy days</string>
     <string name="analysis_weather_dry">☀️ Dry days</string>
+    <!-- Zip backup / restore -->
+    <string name="backup_zip">Backup to zip</string>
+    <string name="restore_zip">Restore from zip</string>
+    <string name="restore_in_progress">Restoring…</string>
+    <string name="restore_confirm_title">Restore backup?</string>
+    <string name="restore_confirm_message">This will replace all your data with the backup. The app will restart.</string>
+    <string name="restore_confirm_yes">Restore</string>
+    <string name="restore_confirm_cancel">Cancel</string>
 </resources>

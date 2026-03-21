@@ -160,4 +160,12 @@
     <string name="analysis_weather_title">Vreme &amp; razpoloženje</string>
     <string name="analysis_weather_rainy">🌧️ Deževni dnevi</string>
     <string name="analysis_weather_dry">☀️ Suhi dnevi</string>
+    <!-- Zip backup / restore -->
+    <string name="backup_zip">Varnostna kopija zip</string>
+    <string name="restore_zip">Obnovi iz zip</string>
+    <string name="restore_in_progress">Obnavljanje…</string>
+    <string name="restore_confirm_title">Obnovi varnostno kopijo?</string>
+    <string name="restore_confirm_message">To bo zamenjalo vse podatke z varnostno kopijo. Aplikacija se bo znova zagnala.</string>
+    <string name="restore_confirm_yes">Obnovi</string>
+    <string name="restore_confirm_cancel">Prekliči</string>
 </resources>

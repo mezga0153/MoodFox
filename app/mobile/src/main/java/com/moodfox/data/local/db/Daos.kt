@@ -19,6 +19,15 @@ interface MoodEntryDao {
 
     @Delete
     suspend fun delete(entry: MoodEntry)
+
+    @Query("SELECT * FROM mood_entries ORDER BY timestamp ASC")
+    suspend fun getAllList(): List<MoodEntry>
+
+    @Query("DELETE FROM mood_entries")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entries: List<MoodEntry>)
 }
 
 @Dao
@@ -36,6 +45,9 @@ interface CauseCategoryDao {
     suspend fun insertAll(categories: List<CauseCategory>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllReplace(categories: List<CauseCategory>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(category: CauseCategory): Long
 
     @Update
@@ -43,6 +55,12 @@ interface CauseCategoryDao {
 
     @Delete
     suspend fun delete(category: CauseCategory)
+
+    @Query("SELECT * FROM cause_categories ORDER BY sortOrder ASC")
+    suspend fun getAllList(): List<CauseCategory>
+
+    @Query("DELETE FROM cause_categories")
+    suspend fun deleteAll()
 
     @Transaction
     suspend fun updateSortOrders(updates: List<Pair<Long, Int>>) {
@@ -65,4 +83,13 @@ interface WeatherSnapshotDao {
 
     @Query("SELECT * FROM weather_snapshots")
     fun getAll(): kotlinx.coroutines.flow.Flow<List<WeatherSnapshot>>
+
+    @Query("SELECT * FROM weather_snapshots")
+    suspend fun getAllList(): List<WeatherSnapshot>
+
+    @Query("DELETE FROM weather_snapshots")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(snapshots: List<WeatherSnapshot>)
 }

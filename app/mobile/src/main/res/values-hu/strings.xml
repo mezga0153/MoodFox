@@ -158,4 +158,12 @@
     <string name="analysis_weather_title">Időjárás &amp; hangulat</string>
     <string name="analysis_weather_rainy">🌧️ Esős napok</string>
     <string name="analysis_weather_dry">☀️ Száraz napok</string>
+    <!-- Zip backup / restore -->
+    <string name="backup_zip">Mentés zip-be</string>
+    <string name="restore_zip">Visszaállítás zip-ből</string>
+    <string name="restore_in_progress">Visszaállítás…</string>
+    <string name="restore_confirm_title">Visszaállítás?</string>
+    <string name="restore_confirm_message">Ez minden adatodat a mentéssel helyettesíti. Az alkalmazás újraindul.</string>
+    <string name="restore_confirm_yes">Visszaállítás</string>
+    <string name="restore_confirm_cancel">Mégse</string>
 </resources>
