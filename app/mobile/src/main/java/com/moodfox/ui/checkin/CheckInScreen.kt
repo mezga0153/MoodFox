@@ -211,6 +211,7 @@ fun CheckInScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .imePadding()
                 .padding(horizontal = 20.dp)
                 .padding(top = 28.dp, bottom = 100.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -315,7 +316,6 @@ fun CheckInScreen(
                         listOf(Color.Transparent, colors.surface, colors.surface),
                     )
                 )
-                .imePadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp),
         ) {
             AnimatedContent(
