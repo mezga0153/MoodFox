@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoodFox — Privacy Policy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; color: #e8e8f0; background: #0d0d1a; padding: 2rem; }
+        .container { max-width: 720px; margin: 0 auto; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #6c9cff; }
+        h2 { font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.5rem; color: #59d8a0; }
+        p, li { margin-bottom: 0.8rem; color: #c8c8d8; }
+        ul { padding-left: 1.5rem; }
+        .date { color: #8b8ba3; font-size: 0.9rem; margin-bottom: 2rem; }
+        a { color: #6c9cff; }
+        .section { margin-bottom: 1.5rem; }
+        hr { border: none; border-top: 1px solid #2a2a40; margin: 2rem 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<h1>Privacy Policy</h1>
+<p class="date">Effective date: March 21, 2026</p>
+
+<p>MoodFox ("the App") is a personal mood tracking application developed by Tine Mezgec. This policy explains what data the App collects, how it is used, and your choices.</p>
+
+<div class="section">
+<h2>1. Local-First Architecture</h2>
+<p>The App stores all your data <strong>locally on your device</strong> using an on-device database (Room). Your mood entries, cause categories, and weather snapshots are never uploaded to any server controlled by us. There is no backend server, no cloud database, and no analytics service collecting your usage data.</p>
+</div>
+
+<div class="section">
+<h2>2. Data We Collect</h2>
+<p>The App processes the following categories of data, all stored on your device:</p>
+<ul>
+    <li><strong>Mood entries</strong> — Mood value (−10 to +10), timestamp, selected cause categories, and optional notes.</li>
+    <li><strong>Cause categories</strong> — Names and settings for the cause categories you define or customise.</li>
+    <li><strong>Weather snapshots</strong> — Temperature, weather condition, and approximate location at the time of logging. Only collected when you grant location permission (see Section 3).</li>
+    <li><strong>App preferences</strong> — Reminder times, quiet hours, and other settings stored on-device using DataStore.</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>3. Location &amp; Weather</h2>
+<p>Weather context is an <strong>optional feature</strong>. If you grant location permission, the App uses your device's location to fetch current weather conditions from the <strong>Open-Meteo API</strong> (api.open-meteo.com). Open-Meteo is a free, open-source weather service that requires no API key.</p>
+<ul>
+    <li>Your approximate GPS or network coordinates are sent to Open-Meteo's servers solely to fetch local weather data.</li>
+    <li>Open-Meteo does not require an account and does not link requests to your identity.</li>
+    <li>Weather data is fetched only at the moment you save a mood entry, not continuously in the background.</li>
+    <li>If you deny or revoke location permission, weather tracking is automatically disabled and the rest of the App works normally.</li>
+    <li>You can also manually enter a city name as a fallback instead of using GPS.</li>
+</ul>
+<p>See <a href="https://open-meteo.com/en/terms" target="_blank">Open-Meteo's Terms</a> for their data handling practices.</p>
+</div>
+
+<div class="section">
+<h2>4. Notifications &amp; Reminders</h2>
+<p>The App can send local reminder notifications to help you remember to log your mood. These notifications are generated entirely on-device. No notification content is sent to any external server. You can enable, configure, or disable reminders at any time in Settings.</p>
+</div>
+
+<div class="section">
+<h2>5. Backup &amp; Export</h2>
+<p>The App provides local backup and export features:</p>
+<ul>
+    <li><strong>CSV export</strong> — Exports your mood entries as a plain-text file you can open in any spreadsheet app.</li>
+    <li><strong>JSON export</strong> — Exports your mood entries as a structured JSON file.</li>
+    <li><strong>Zip backup / restore</strong> — Creates a zip archive containing all your data (mood entries, categories, weather snapshots) that you can store wherever you like and restore from at any time.</li>
+</ul>
+<p>All backup files are created locally and shared only through the standard Android share sheet — to destinations you choose. We have no access to your backup files.</p>
+</div>
+
+<div class="section">
+<h2>6. Data Sharing</h2>
+<p>The App does <strong>not</strong> sell, rent, or share your personal data with any third parties. Data leaves your device only in these cases:</p>
+<ul>
+    <li>When weather tracking is enabled and you save a mood entry — your location coordinates are sent to Open-Meteo to retrieve weather data.</li>
+    <li>When you explicitly export or share a backup file using the Android share sheet.</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>7. Data Retention &amp; Deletion</h2>
+<p>All data is stored locally on your device. You can delete your data at any time by:</p>
+<ul>
+    <li>Clearing app data in Android Settings → Apps → MoodFox → Storage → Clear Data.</li>
+    <li>Uninstalling the App, which removes all local data.</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>8. Children's Privacy</h2>
+<p>The App is not intended for children under 13. We do not knowingly collect data from children.</p>
+</div>
+
+<div class="section">
+<h2>9. Changes to This Policy</h2>
+<p>We may update this policy from time to time. Changes will be posted on this page with an updated effective date.</p>
+</div>
+
+<div class="section">
+<h2>10. Contact</h2>
+<p>If you have questions about this privacy policy, contact: <a href="https://github.com/mezga0153/MoodFox/issues">GitHub Issues</a></p>
+</div>
+
+<hr>
+<p style="font-size: 0.85rem; color: #8b8ba3;">MoodFox is an open-source project licensed under the MIT License.<br>Source code: <a href="https://github.com/mezga0153/MoodFox">github.com/mezga0153/MoodFox</a></p>
+
+</div>
+</body>
+</html>
