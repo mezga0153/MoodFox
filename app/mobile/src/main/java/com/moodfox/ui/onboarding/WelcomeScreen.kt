@@ -182,18 +182,15 @@ private fun OnboardingPage0(preferencesManager: PreferencesManager, scope: Corou
 
         Spacer(Modifier.height(36.dp))
 
-        // Language row
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        // Language row — centered
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = Icons.Filled.Language,
                 contentDescription = null,
                 tint = colors.onSurfaceVariant,
                 modifier = Modifier.size(18.dp),
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
                 text = stringResource(R.string.settings_language),
                 style = MaterialTheme.typography.labelLarge,
@@ -202,9 +199,8 @@ private fun OnboardingPage0(preferencesManager: PreferencesManager, scope: Corou
         }
         Spacer(Modifier.height(8.dp))
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalArrangement   = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth(),
         ) {
             data class Lang(val tag: String, val labelRes: Int)
             val langs = listOf(
@@ -228,18 +224,15 @@ private fun OnboardingPage0(preferencesManager: PreferencesManager, scope: Corou
 
         Spacer(Modifier.height(20.dp))
 
-        // Dark / Light row
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        // Dark / Light row — centered
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = if (currentMode == ThemeMode.DARK) Icons.Filled.DarkMode else Icons.Filled.LightMode,
                 contentDescription = null,
                 tint = colors.onSurfaceVariant,
                 modifier = Modifier.size(18.dp),
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
                 text = stringResource(R.string.settings_theme),
                 style = MaterialTheme.typography.labelLarge,
@@ -272,7 +265,10 @@ private fun OnboardingPage0(preferencesManager: PreferencesManager, scope: Corou
 private fun OnboardingPage1() {
     val colors = LocalAppColors.current
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 28.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -280,24 +276,105 @@ private fun OnboardingPage1() {
             painter = painterResource(R.drawable.fox),
             contentDescription = null,
             modifier = Modifier
-                .size(140.dp)
+                .size(90.dp)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop,
         )
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(20.dp))
         Text(
             text = stringResource(R.string.onboarding_page1_title),
             style = MaterialTheme.typography.headlineMedium,
             color = colors.onSurface,
+            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.onboarding_page1_subtitle),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = colors.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        Spacer(Modifier.height(24.dp))
+
+        // Slider info card
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(colors.cardSurface)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "😭  ←  😐  →  🤩",
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Spacer(Modifier.height(6.dp))
+            // Gradient track
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(colors.tertiary, colors.outline, colors.secondary),
+                        )
+                    ),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = "-10", style = MaterialTheme.typography.labelSmall, color = colors.tertiary)
+                Text(text = "0",   style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
+                Text(text = "+10", style = MaterialTheme.typography.labelSmall, color = colors.secondary)
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Slide left or right to rate how you feel. Aim to stay between −2 and +2.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Cause selection info card
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(colors.cardSurface)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                listOf("😴 Sleep", "🏃 Exercise", "💼 Work").forEach { label ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(colors.primary.copy(alpha = 0.2f))
+                            .border(1.dp, colors.primary.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                    ) {
+                        Text(text = label, style = MaterialTheme.typography.labelMedium, color = colors.primary)
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Tap the causes that influenced your mood. Add your own in Settings.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Spacer(Modifier.height(16.dp))
     }
 }
 
