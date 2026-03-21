@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
@@ -424,19 +425,14 @@ private fun MoodScaleSlider(value: Int, onChange: (Int) -> Unit, colors: AppColo
             )
         }
 
-        // Numeric labels
+        // Numeric labels — positioned to match their actual location on the track
         val numericTicks = listOf(-10, -5, -2, 0, 2, 5, 10)
-        Row(
-            modifier              = Modifier.fillMaxWidth().padding(top = 40.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            numericTicks.forEach { tick ->
-                val isActive = tick == value
-                val label    = if (tick > 0) "+$tick" else "$tick"
-                Box(
-                    modifier         = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
+        Layout(
+            modifier = Modifier.fillMaxWidth().padding(top = 40.dp),
+            content = {
+                numericTicks.forEach { tick ->
+                    val isActive = tick == value
+                    val label    = if (tick > 0) "+$tick" else "$tick"
                     Text(
                         text       = label,
                         fontSize   = if (isActive) 13.sp else 11.sp,
@@ -445,6 +441,18 @@ private fun MoodScaleSlider(value: Int, onChange: (Int) -> Unit, colors: AppColo
                                      else colors.onSurfaceVariant.copy(alpha = 0.55f),
                         textAlign  = TextAlign.Center,
                     )
+                }
+            },
+        ) { measurables, constraints ->
+            val placeables = measurables.map { it.measure(androidx.compose.ui.unit.Constraints()) }
+            val height = placeables.maxOf { it.height }
+            layout(constraints.maxWidth, height) {
+                numericTicks.forEachIndexed { i, tick ->
+                    val fraction = (tick + 10f) / 20f
+                    val centerX  = (fraction * constraints.maxWidth).toInt()
+                    val x = (centerX - placeables[i].width / 2)
+                        .coerceIn(0, constraints.maxWidth - placeables[i].width)
+                    placeables[i].placeRelative(x, 0)
                 }
             }
         }
