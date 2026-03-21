@@ -205,10 +205,12 @@ fun CheckInScreen(
             .background(screenGradient),
     ) {
         // ── Scrollable content ────────────────────────────
+        val scrollState = rememberScrollState()
+        val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp)
                 .padding(top = 28.dp, bottom = 100.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -241,6 +243,7 @@ fun CheckInScreen(
                 showNote     = showNote,
                 onToggle     = { showNote = !showNote },
                 onNoteChange = { if (it.length <= 300) note = it },
+                scrollState  = scrollState,
                 colors       = colors,
             )
 
@@ -305,7 +308,7 @@ fun CheckInScreen(
 
         // ── Sticky save button ────────────────────────────
         AnimatedVisibility(
-            visible = !showNote,
+            visible = !imeVisible,
             enter   = fadeIn(tween(200)),
             exit    = fadeOut(tween(150)),
             modifier = Modifier
@@ -653,6 +656,7 @@ private fun NoteCard(
     showNote: Boolean,
     onToggle: () -> Unit,
     onNoteChange: (String) -> Unit,
+    scrollState: ScrollState,
     colors: AppColors,
 ) {
     Surface(
@@ -689,6 +693,9 @@ private fun NoteCard(
             AnimatedVisibility(visible = showNote) {
                 Column {
                     Spacer(Modifier.height(10.dp))
+                    LaunchedEffect(note) {
+                        scrollState.animateScrollTo(scrollState.maxValue)
+                    }
                     OutlinedTextField(
                         value         = note,
                         onValueChange = onNoteChange,
