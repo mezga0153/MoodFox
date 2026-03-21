@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -580,6 +582,10 @@ private fun NoteCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            val focusRequester = remember { FocusRequester() }
+            LaunchedEffect(showNote) {
+                if (showNote) focusRequester.requestFocus()
+            }
             AnimatedVisibility(visible = showNote) {
                 Column {
                     Spacer(Modifier.height(10.dp))
@@ -589,7 +595,7 @@ private fun NoteCard(
                         placeholder   = {
                             Text(stringResource(R.string.checkin_note_hint), color = colors.onSurfaceVariant)
                         },
-                        modifier      = Modifier.fillMaxWidth(),
+                        modifier      = Modifier.fillMaxWidth().focusRequester(focusRequester),
                         colors        = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor   = colors.primary,
                             unfocusedBorderColor = colors.outline,

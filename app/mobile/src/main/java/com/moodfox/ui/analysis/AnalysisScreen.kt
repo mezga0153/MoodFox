@@ -427,14 +427,14 @@ private fun WeatherMoodSection(stat: MoodStats.WeatherAnalysis, colors: AppColor
 
     fun moodStr(v: Float?) = if (v == null) "—" else if (v >= 0) "+%.1f".format(v) else "%.1f".format(v)
     fun conditionEmoji(c: String) = when {
-        c.contains("thunder", ignoreCase = true) -> "⛈️"
-        c.contains("rain", ignoreCase = true)    -> "🌧️"
-        c.contains("drizzle", ignoreCase = true) -> "🌦️"
-        c.contains("snow", ignoreCase = true)    -> "❄️"
-        c.contains("fog", ignoreCase = true) || c.contains("mist", ignoreCase = true) -> "🌫️"
-        c.contains("cloud", ignoreCase = true)   -> "☁️"
-        c.contains("clear", ignoreCase = true) || c.contains("sunny", ignoreCase = true) -> "☀️"
-        else -> "🌤️"
+        "thunder" in c.lowercase()             -> "⛈️"
+        "snow"    in c.lowercase()             -> "❄️"
+        "fog"     in c.lowercase() || "mist" in c.lowercase() -> "🌫️"
+        "rain"    in c.lowercase() || "drizzle" in c.lowercase() || "shower" in c.lowercase() -> "🌧️"
+        "clear"   in c.lowercase() || "sunny" in c.lowercase() -> "☀️"
+        "partly"  in c.lowercase() || "overcast" in c.lowercase() -> "⛅"
+        "cloud"   in c.lowercase()             -> "⛅"
+        else                                   -> "🌤️"
     }
 
     Surface(
