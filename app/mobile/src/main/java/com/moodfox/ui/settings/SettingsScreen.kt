@@ -34,13 +34,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.LocaleListCompat
+import com.moodfox.BuildConfig
 import com.moodfox.R
 import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategory
+import com.moodfox.data.local.db.CauseCategoryDao
+import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.WeatherSnapshotDao
+import com.moodfox.data.local.seedDummyData
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.domain.ReminderScheduler
 import com.moodfox.ui.theme.*
 import kotlinx.coroutines.launch
@@ -52,6 +56,9 @@ fun SettingsScreen(
     preferencesManager: PreferencesManager,
     reminderScheduler: ReminderScheduler,
     backupManager: BackupManager,
+    moodEntryDao: MoodEntryDao,
+    causeCategoryDao: CauseCategoryDao,
+    weatherSnapshotDao: WeatherSnapshotDao,
     onNavigateToCategories: () -> Unit,
     onNavigateToHowItWorks: () -> Unit,
 ) {
@@ -453,6 +460,29 @@ fun SettingsScreen(
                     )
                 },
             )
+        }
+
+        // ── Debug ─────────────────────────────────────────────
+        if (BuildConfig.DEBUG) {
+            var seeding by remember { mutableStateOf(false) }
+            var seedDone by remember { mutableStateOf(false) }
+            SettingsSection("Debug", colors) {
+                SettingsNavRow(
+                    label   = if (seeding) "Seeding…" else if (seedDone) "Done! Seeded 30 days" else "Fill with 30 days of dummy data",
+                    icon    = Icons.Filled.Science,
+                    colors  = colors,
+                    onClick = {
+                        if (!seeding && !seedDone) {
+                            seeding = true
+                            scope.launch {
+                                seedDummyData(moodEntryDao, causeCategoryDao, weatherSnapshotDao)
+                                seeding = false
+                                seedDone = true
+                            }
+                        }
+                    },
+                )
+            }
         }
 
         Spacer(Modifier.height(8.dp))

@@ -137,6 +137,9 @@ fun MoodFoxNavGraph(
                     preferencesManager = preferencesManager,
                     reminderScheduler  = reminderScheduler,
                     backupManager      = backupManager,
+                    moodEntryDao       = moodEntryDao,
+                    causeCategoryDao   = causeCategoryDao,
+                    weatherSnapshotDao = weatherSnapshotDao,
                     onNavigateToCategories = { navController.navigate("settings/categories") },
                     onNavigateToHowItWorks = { navController.navigate("how_it_works") },
                 )
