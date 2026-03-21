@@ -98,15 +98,18 @@ private val SCALE_EMOJIS = mapOf(
 
 private fun moodEmoji(value: Int) = SCALE_EMOJIS[value.coerceIn(-10, 10)] ?: "😐"
 
-private fun conditionEmoji(condition: String): String = when {
-    condition.contains("thunder", ignoreCase = true) -> "⛈️"
-    condition.contains("rain", ignoreCase = true)    -> "🌧️"
-    condition.contains("drizzle", ignoreCase = true) -> "🌦️"
-    condition.contains("snow", ignoreCase = true)    -> "❄️"
-    condition.contains("fog", ignoreCase = true) || condition.contains("mist", ignoreCase = true) -> "🌫️"
-    condition.contains("cloud", ignoreCase = true)   -> "☁️"
-    condition.contains("clear", ignoreCase = true) || condition.contains("sunny", ignoreCase = true) -> "☀️"
-    else -> "🌤️"
+private fun conditionEmoji(condition: String): String {
+    val c = condition.lowercase()
+    return when {
+        "thunder" in c              -> "⛈️"
+        "snow"    in c              -> "❄️"
+        "fog"     in c || "mist" in c -> "🌫️"
+        "rain"    in c || "drizzle" in c || "shower" in c -> "🌧️"
+        "clear"   in c || "sunny" in c -> "☀️"
+        "partly"  in c || "overcast" in c -> "⛅"
+        "cloud"   in c              -> "⛅"
+        else                        -> "🌤️"
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -425,8 +428,9 @@ private fun CalendarListView(
                                         Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = colors.error, modifier = Modifier.size(16.dp))
                                     }
                                 }
-                                // Cause pills
-                                if (entryCauses.isNotEmpty()) {
+                                // Cause pills + weather chip together
+                                val snap = entry.weatherSnapshotId?.let { snapshotMap[it] }
+                                if (entryCauses.isNotEmpty() || snap != null) {
                                     FlowRow(
                                         modifier              = Modifier.padding(start = 52.dp, end = 12.dp, bottom = 6.dp),
                                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -446,23 +450,19 @@ private fun CalendarListView(
                                                 )
                                             }
                                         }
-                                    }
-                                }
-                                // Weather chip
-                                val snap = entry.weatherSnapshotId?.let { snapshotMap[it] }
-                                if (snap != null) {
-                                    val condEmoji = conditionEmoji(snap.condition)
-                                    Surface(
-                                        shape    = RoundedCornerShape(20.dp),
-                                        color    = colors.outline.copy(alpha = 0.15f),
-                                        modifier = Modifier.padding(start = 52.dp, end = 12.dp, bottom = 6.dp),
-                                    ) {
-                                        Text(
-                                            text     = "$condEmoji ${snap.temperatureC.toInt()}°C · ${snap.city}",
-                                            style    = MaterialTheme.typography.labelSmall,
-                                            color    = colors.onSurfaceVariant,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                        )
+                                        if (snap != null) {
+                                            Surface(
+                                                shape = RoundedCornerShape(20.dp),
+                                                color = colors.outline.copy(alpha = 0.15f),
+                                            ) {
+                                                Text(
+                                                    text     = "${conditionEmoji(snap.condition)} ${snap.temperatureC.toInt()}°C",
+                                                    style    = MaterialTheme.typography.labelSmall,
+                                                    color    = colors.onSurfaceVariant,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                                 // Note (on click of comment icon)
