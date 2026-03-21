@@ -39,6 +39,12 @@ import com.moodfox.ui.components.HelperBar
 import com.moodfox.ui.components.localizedCauseName
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import kotlin.math.abs
@@ -58,7 +64,18 @@ private fun moodColor(value: Int, colors: AppColors): Color = when {
     value < -2 -> colors.tertiary
     else       -> colors.primary
 }
-
+private fun conditionEmoji(condition: String) = when {
+    "clear"   in condition.lowercase()                               -> "☀️"
+    "cloud"   in condition.lowercase() ||
+    "partly"  in condition.lowercase()                               -> "⛅"
+    "rain"    in condition.lowercase() ||
+    "drizzle" in condition.lowercase() ||
+    "shower"  in condition.lowercase()                               -> "🌧️"
+    "snow"    in condition.lowercase()                               -> "❄️"
+    "thunder" in condition.lowercase()                               -> "⛈️"
+    "fog"     in condition.lowercase()                               -> "🌫️"
+    else                                                              -> "🌤️"
+}
 // ── Main screen ───────────────────────────────────────────
 @Composable
 fun CheckInScreen(
@@ -82,6 +99,43 @@ fun CheckInScreen(
     var lastSavedMood  by remember { mutableIntStateOf(0) }
 
     val displayColor by animateColorAsState(moodColor(moodValue, colors), tween(250), "dcolor")
+
+    val context = LocalContext.current
+    var weatherSnapshotId by remember { mutableStateOf<Long?>(null) }
+    var weatherDisplay    by remember { mutableStateOf<String?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        if (perms.values.any { it }) {
+            scope.launch {
+                val loc  = weatherService.getLastKnownLocation(context) ?: return@launch
+                val snap = weatherService.fetchCurrent(loc.latitude, loc.longitude) ?: return@launch
+                weatherSnapshotId = weatherSnapshotDao.insert(snap)
+                weatherDisplay = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
+            }
+        }
+    }
+
+    LaunchedEffect(weatherEnabled) {
+        if (!weatherEnabled) return@LaunchedEffect
+        val hasPerm = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (hasPerm) {
+            val loc  = weatherService.getLastKnownLocation(context) ?: return@LaunchedEffect
+            val snap = weatherService.fetchCurrent(loc.latitude, loc.longitude) ?: return@LaunchedEffect
+            weatherSnapshotId = weatherSnapshotDao.insert(snap)
+            weatherDisplay = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
+        } else {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                )
+            )
+        }
+    }
 
     LaunchedEffect(saved) {
         if (saved) {
@@ -150,6 +204,21 @@ fun CheckInScreen(
                 colors    = colors,
                 modifier  = Modifier.padding(top = 16.dp),
             )
+
+            if (weatherEnabled && weatherDisplay != null) {
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = colors.cardSurface,
+                ) {
+                    Text(
+                        text     = weatherDisplay!!,
+                        style    = MaterialTheme.typography.labelMedium,
+                        color    = colors.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+            }
         }
 
         // ── Sticky save button ────────────────────────────
@@ -187,10 +256,11 @@ fun CheckInScreen(
                                 }.toString()
                                 moodEntryDao.insert(
                                     MoodEntry(
-                                        timestamp = System.currentTimeMillis(),
-                                        moodValue = moodValue,
-                                        causeIds  = causeJson,
-                                        note      = note.trimEnd().ifEmpty { null },
+                                        timestamp         = System.currentTimeMillis(),
+                                        moodValue         = moodValue,
+                                        causeIds          = causeJson,
+                                        note              = note.trimEnd().ifEmpty { null },
+                                        weatherSnapshotId = weatherSnapshotId,
                                     )
                                 )
                                 lastSavedMood = moodValue

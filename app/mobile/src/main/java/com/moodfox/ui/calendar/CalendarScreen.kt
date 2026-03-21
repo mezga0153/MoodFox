@@ -42,8 +42,14 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import com.moodfox.R
 import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.WeatherSnapshotDao
+import com.moodfox.data.remote.WeatherService
 import com.moodfox.ui.components.localizedCauseName
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
@@ -94,7 +100,13 @@ private fun moodEmoji(value: Int) = SCALE_EMOJIS[value.coerceIn(-10, 10)] ?: "ðŸ
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDao) {
+fun CalendarScreen(
+    moodEntryDao: MoodEntryDao,
+    causeCategoryDao: CauseCategoryDao,
+    weatherSnapshotDao: WeatherSnapshotDao,
+    weatherService: WeatherService,
+    weatherEnabled: Boolean,
+) {
     val colors = LocalAppColors.current
     val today  = LocalDate.now()
     val scope  = rememberCoroutineScope()
@@ -102,6 +114,19 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
     var displayMonth by remember { mutableStateOf(YearMonth.from(today)) }
     var selectedDay  by remember { mutableStateOf<LocalDate?>(null) }
     var showAddSheet by remember { mutableStateOf(false) }
+
+    val context           = LocalContext.current
+    var pendingSnapshotId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(showAddSheet) {
+        if (!showAddSheet || !weatherEnabled) return@LaunchedEffect
+        val hasPerm = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!hasPerm) return@LaunchedEffect
+        val loc  = weatherService.getLastKnownLocation(context) ?: return@LaunchedEffect
+        val snap = weatherService.fetchCurrent(loc.latitude, loc.longitude) ?: return@LaunchedEffect
+        pendingSnapshotId = weatherSnapshotDao.insert(snap)
+    }
 
     val allCategories by causeCategoryDao.getAll().collectAsState(initial = emptyList())
     val categoryMap: Map<Long, CauseCategory> = remember(allCategories) {
@@ -194,7 +219,8 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
             onDismiss        = { showAddSheet = false },
             onSave           = { entry ->
                 scope.launch {
-                    moodEntryDao.insert(entry)
+                    moodEntryDao.insert(entry.copy(weatherSnapshotId = pendingSnapshotId))
+                    pendingSnapshotId = null
                     showAddSheet = false
                 }
             },

@@ -49,6 +49,19 @@ class WeatherService @Inject constructor(private val client: HttpClient) {
         else -> "Unknown"
     }
 
+    @android.annotation.SuppressLint("MissingPermission")
+    fun getLastKnownLocation(context: android.content.Context): android.location.Location? {
+        val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE)
+                as android.location.LocationManager
+        return listOf(
+            "fused",
+            android.location.LocationManager.NETWORK_PROVIDER,
+            android.location.LocationManager.GPS_PROVIDER,
+        ).firstNotNullOfOrNull { provider ->
+            try { lm.getLastKnownLocation(provider) } catch (_: Exception) { null }
+        }
+    }
+
     @Serializable
     private data class OpenMeteoResponse(val current: CurrentWeather)
 
