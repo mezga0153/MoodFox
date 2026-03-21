@@ -130,6 +130,8 @@ fun CheckInScreen(
     val context = LocalContext.current
     var weatherSnapshotId    by remember { mutableStateOf<Long?>(null) }
     var weatherDisplay        by remember { mutableStateOf<String?>(null) }
+    var detectedCondition     by remember { mutableStateOf<String?>(null) }
+    var detectedTempC         by remember { mutableStateOf<Float?>(null) }
     var showWeatherOverride   by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -139,8 +141,10 @@ fun CheckInScreen(
             scope.launch {
                 val loc  = weatherService.getLastKnownLocation(context) ?: return@launch
                 val snap = weatherService.fetchCurrent(loc.latitude, loc.longitude) ?: return@launch
-                weatherSnapshotId = weatherSnapshotDao.insert(snap)
-                weatherDisplay = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
+                weatherSnapshotId    = weatherSnapshotDao.insert(snap)
+                detectedCondition    = snap.condition
+                detectedTempC        = snap.temperatureC
+                weatherDisplay       = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
             }
         }
     }
@@ -154,7 +158,9 @@ fun CheckInScreen(
             val loc  = weatherService.getLastKnownLocation(context) ?: return@LaunchedEffect
             val snap = weatherService.fetchCurrent(loc.latitude, loc.longitude) ?: return@LaunchedEffect
             weatherSnapshotId = weatherSnapshotDao.insert(snap)
-            weatherDisplay = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
+            detectedCondition = snap.condition
+            detectedTempC     = snap.temperatureC
+            weatherDisplay    = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
         } else {
             permissionLauncher.launch(
                 arrayOf(
@@ -262,8 +268,10 @@ fun CheckInScreen(
 
             if (showWeatherOverride) {
                 WeatherOverrideSheet(
-                    colors    = colors,
-                    onDismiss = { showWeatherOverride = false },
+                    colors             = colors,
+                    initialCondition   = detectedCondition,
+                    initialTempC       = detectedTempC,
+                    onDismiss          = { showWeatherOverride = false },
                     onConfirm = { condition, tempC ->
                         showWeatherOverride = false
                         scope.launch {
@@ -694,11 +702,17 @@ private val WEATHER_CONDITIONS = listOf(
 @Composable
 private fun WeatherOverrideSheet(
     colors: AppColors,
+    initialCondition: String?,
+    initialTempC: Float?,
     onDismiss: () -> Unit,
     onConfirm: (condition: String, tempC: Float) -> Unit,
 ) {
-    var selectedCondition by remember { mutableStateOf(WEATHER_CONDITIONS[0]) }
-    var tempText          by remember { mutableStateOf("20") }
+    var selectedCondition by remember {
+        mutableStateOf(initialCondition?.let { ic ->
+            WEATHER_CONDITIONS.firstOrNull { it.equals(ic, ignoreCase = true) } ?: WEATHER_CONDITIONS[0]
+        } ?: WEATHER_CONDITIONS[0])
+    }
+    var tempText by remember { mutableStateOf(initialTempC?.toInt()?.toString() ?: "20") }
 
     ModalBottomSheet(
         onDismissRequest  = onDismiss,
