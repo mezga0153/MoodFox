@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
@@ -204,6 +205,7 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
 
 // ── Calendar list view ────────────────────────────────────
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CalendarListView(
     month: YearMonth,
@@ -255,9 +257,10 @@ private fun CalendarListView(
             }
 
             items(week.days, key = { it.toString() }) { date ->
-                val stats      = monthStats[date]
-                val hasEntries = (stats?.entries?.size ?: 0) > 0
-                val isExpanded = expandedDay == date
+                val stats          = monthStats[date]
+                val hasEntries     = (stats?.entries?.size ?: 0) > 0
+                val isExpanded     = expandedDay == date
+                var expandedNotes  by remember { mutableStateOf(setOf<Long>()) }
                 val avgColor   = if (hasEntries) moodColor(stats!!.avg, colors) else colors.outline
 
                 Column(
@@ -334,39 +337,83 @@ private fun CalendarListView(
                     if (isExpanded && stats != null) {
                         HorizontalDivider(color = colors.outline.copy(alpha = 0.3f))
                         stats.entries.sortedBy { it.timestamp }.forEach { entry ->
-                            val time    = Instant.ofEpochMilli(entry.timestamp).atZone(ZoneId.systemDefault()).toLocalTime()
-                            val timeStr = "%02d:%02d".format(time.hour, time.minute)
-                            val ec      = moodColor(entry.moodValue.toFloat(), colors)
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(timeStr, style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant, modifier = Modifier.width(40.dp))
-                                Text(moodEmoji(entry.moodValue), style = MaterialTheme.typography.titleSmall)
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text       = if (entry.moodValue >= 0) "+${entry.moodValue}" else "${entry.moodValue}",
-                                    style      = MaterialTheme.typography.labelLarge,
-                                    color      = ec,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                if (!entry.note.isNullOrBlank()) {
-                                    Spacer(Modifier.width(8.dp))
+                            val time         = Instant.ofEpochMilli(entry.timestamp).atZone(ZoneId.systemDefault()).toLocalTime()
+                            val timeStr      = "%02d:%02d".format(time.hour, time.minute)
+                            val ec           = moodColor(entry.moodValue.toFloat(), colors)
+                            val hasNote      = !entry.note.isNullOrBlank()
+                            val noteExpanded = entry.id in expandedNotes
+                            val entryCauses  = remember(entry.causeIds, categoryMap) {
+                                val arr = JSONArray(entry.causeIds)
+                                (0 until arr.length()).mapNotNull { categoryMap[arr.getLong(it)] }
+                            }
+
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(timeStr, style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant, modifier = Modifier.width(40.dp))
+                                    Text(moodEmoji(entry.moodValue), style = MaterialTheme.typography.titleSmall)
+                                    Spacer(Modifier.width(6.dp))
                                     Text(
-                                        text     = entry.note,
-                                        style    = MaterialTheme.typography.bodySmall,
-                                        color    = colors.onSurfaceVariant,
-                                        modifier = Modifier.weight(1f),
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        text       = if (entry.moodValue >= 0) "+${entry.moodValue}" else "${entry.moodValue}",
+                                        style      = MaterialTheme.typography.labelLarge,
+                                        color      = ec,
+                                        fontWeight = FontWeight.Bold,
                                     )
-                                } else {
                                     Spacer(Modifier.weight(1f))
+                                    if (hasNote) {
+                                        IconButton(
+                                            onClick  = { expandedNotes = if (noteExpanded) expandedNotes - entry.id else expandedNotes + entry.id },
+                                            modifier = Modifier.size(36.dp),
+                                        ) {
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.Comment,
+                                                contentDescription = "Note",
+                                                tint     = if (noteExpanded) colors.primary else colors.onSurfaceVariant,
+                                                modifier = Modifier.size(16.dp),
+                                            )
+                                        }
+                                    }
+                                    IconButton(onClick = { onDeleteEntry(entry) }, modifier = Modifier.size(36.dp)) {
+                                        Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = colors.error, modifier = Modifier.size(16.dp))
+                                    }
                                 }
-                                IconButton(onClick = { onDeleteEntry(entry) }, modifier = Modifier.size(36.dp)) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = colors.error, modifier = Modifier.size(16.dp))
+                                // Cause pills
+                                if (entryCauses.isNotEmpty()) {
+                                    FlowRow(
+                                        modifier              = Modifier.padding(start = 52.dp, end = 12.dp, bottom = 6.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement   = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        entryCauses.forEach { cat ->
+                                            Surface(
+                                                shape  = RoundedCornerShape(20.dp),
+                                                color  = ec.copy(alpha = 0.12f),
+                                                border = BorderStroke(1.dp, ec.copy(alpha = 0.3f)),
+                                            ) {
+                                                Text(
+                                                    text     = "${cat.emoji} ${localizedCauseName(cat)}",
+                                                    style    = MaterialTheme.typography.labelSmall,
+                                                    color    = colors.onSurface,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                // Note (on click of comment icon)
+                                if (hasNote && noteExpanded) {
+                                    Text(
+                                        text     = entry.note.orEmpty(),
+                                        style    = MaterialTheme.typography.bodySmall,
+                                        color    = colors.onSurface,
+                                        modifier = Modifier.padding(start = 52.dp, end = 12.dp, bottom = 8.dp),
+                                    )
+                                } else if (entryCauses.isEmpty() && !hasNote) {
+                                    Spacer(Modifier.height(4.dp))
                                 }
                             }
                         }
