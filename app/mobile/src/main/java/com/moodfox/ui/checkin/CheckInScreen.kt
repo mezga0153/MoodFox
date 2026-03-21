@@ -205,10 +205,12 @@ fun CheckInScreen(
             .background(screenGradient),
     ) {
         // ── Scrollable content ────────────────────────────
+        val scrollState = rememberScrollState()
+        val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp)
                 .padding(top = 28.dp, bottom = 100.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -241,6 +243,7 @@ fun CheckInScreen(
                 showNote     = showNote,
                 onToggle     = { showNote = !showNote },
                 onNoteChange = { if (it.length <= 300) note = it },
+                scrollState  = scrollState,
                 colors       = colors,
             )
 
@@ -304,10 +307,17 @@ fun CheckInScreen(
         }
 
         // ── Sticky save button ────────────────────────────
+        AnimatedVisibility(
+            visible = !imeVisible,
+            enter   = fadeIn(tween(200)),
+            exit    = fadeOut(tween(150)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter),
+        ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter)
                 .background(
                     Brush.verticalGradient(
                         listOf(Color.Transparent, colors.surface, colors.surface),
@@ -364,6 +374,7 @@ fun CheckInScreen(
                     }
                 }
             }
+        }
         }
     }
 }
@@ -645,6 +656,7 @@ private fun NoteCard(
     showNote: Boolean,
     onToggle: () -> Unit,
     onNoteChange: (String) -> Unit,
+    scrollState: ScrollState,
     colors: AppColors,
 ) {
     Surface(
@@ -666,13 +678,21 @@ private fun NoteCard(
                     modifier           = Modifier.size(16.dp),
                 )
                 Spacer(Modifier.width(10.dp))
-                Text(
-                    text     = if (note.isBlank()) stringResource(R.string.checkin_note_add) else note,
-                    style    = MaterialTheme.typography.bodyMedium,
-                    color    = if (note.isBlank()) colors.onSurfaceVariant else colors.onSurface,
-                    maxLines = if (showNote) Int.MAX_VALUE else 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                if (!showNote) {
+                    Text(
+                        text     = if (note.isBlank()) stringResource(R.string.checkin_note_add) else note,
+                        style    = MaterialTheme.typography.bodyMedium,
+                        color    = if (note.isBlank()) colors.onSurfaceVariant else colors.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } else {
+                    Text(
+                        text  = stringResource(R.string.checkin_note_add),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onSurfaceVariant,
+                    )
+                }
             }
             val focusRequester = remember { FocusRequester() }
             LaunchedEffect(showNote) {
@@ -681,13 +701,18 @@ private fun NoteCard(
             AnimatedVisibility(visible = showNote) {
                 Column {
                     Spacer(Modifier.height(10.dp))
+                    LaunchedEffect(note) {
+                        scrollState.animateScrollTo(scrollState.maxValue)
+                    }
                     OutlinedTextField(
                         value         = note,
                         onValueChange = onNoteChange,
                         placeholder   = {
                             Text(stringResource(R.string.checkin_note_hint), color = colors.onSurfaceVariant)
                         },
-                        modifier      = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                        modifier      = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester),
                         colors        = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor   = colors.primary,
                             unfocusedBorderColor = colors.outline,
