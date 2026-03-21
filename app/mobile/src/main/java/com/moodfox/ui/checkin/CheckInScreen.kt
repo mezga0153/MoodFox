@@ -211,7 +211,6 @@ fun CheckInScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .imePadding()
                 .padding(horizontal = 20.dp)
                 .padding(top = 28.dp, bottom = 100.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -650,7 +649,6 @@ private fun NoteCard(
     onNoteChange: (String) -> Unit,
     colors: AppColors,
 ) {
-    val noteScope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     Surface(
         shape    = RoundedCornerShape(20.dp),
