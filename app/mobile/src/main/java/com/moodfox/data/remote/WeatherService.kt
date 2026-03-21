@@ -33,10 +33,21 @@ class WeatherService @Inject constructor(private val client: HttpClient) {
         )
     } catch (_: Exception) { null }
 
-    suspend fun fetchByCity(city: String): WeatherSnapshot? {
-        // TODO Phase 15: geocode city name then call fetchCurrent
-        return null
-    }
+    suspend fun fetchByCity(city: String): WeatherSnapshot? = try {
+        @Serializable
+        data class GeoResult(val latitude: Double, val longitude: Double, val name: String)
+        @Serializable
+        data class GeoResponse(val results: List<GeoResult> = emptyList())
+
+        val geo: GeoResponse = client.get("https://geocoding-api.open-meteo.com/v1/search") {
+            parameter("name", city)
+            parameter("count", 1)
+            parameter("language", "en")
+            parameter("format", "json")
+        }.body()
+        val result = geo.results.firstOrNull() ?: return null
+        fetchCurrent(result.latitude, result.longitude)?.copy(city = result.name)
+    } catch (_: Exception) { null }
 
     private fun weatherCodeToCondition(code: Int): String = when (code) {
         0 -> "Clear"

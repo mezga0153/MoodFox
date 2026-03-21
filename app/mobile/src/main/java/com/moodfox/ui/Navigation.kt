@@ -51,6 +51,7 @@ fun MoodFoxNavGraph(
 
     val onboardingComplete by preferencesManager.onboardingComplete.collectAsState(initial = null)
     val weatherEnabled by preferencesManager.weatherEnabled.collectAsState(initial = false)
+    val manualCity by preferencesManager.manualCity.collectAsState(initial = null)
 
     // Wait until the flag is loaded before deciding start destination
     if (onboardingComplete == null) return
@@ -109,11 +110,12 @@ fun MoodFoxNavGraph(
             }
             composable("checkin") {
                 CheckInScreen(
-                    moodEntryDao = moodEntryDao,
-                    causeCategoryDao = causeCategoryDao,
+                    moodEntryDao       = moodEntryDao,
+                    causeCategoryDao   = causeCategoryDao,
                     weatherSnapshotDao = weatherSnapshotDao,
-                    weatherService = weatherService,
-                    weatherEnabled = weatherEnabled,
+                    weatherService     = weatherService,
+                    weatherEnabled     = weatherEnabled,
+                    manualCity         = manualCity,
                 )
             }
             composable("calendar") {

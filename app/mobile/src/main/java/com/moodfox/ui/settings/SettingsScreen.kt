@@ -341,7 +341,50 @@ fun SettingsScreen(
                 colors  = colors,
                 onChange = { scope.launch { preferencesManager.setWeatherEnabled(it) } },
             )
-        }
+            if (weatherEnabled) {
+                Spacer(Modifier.height(12.dp))
+                val manualCity by preferencesManager.manualCity.collectAsState(initial = null)
+                var cityDraft  by remember(manualCity) { mutableStateOf(manualCity ?: "") }
+                OutlinedTextField(
+                    value         = cityDraft,
+                    onValueChange = { cityDraft = it },
+                    label         = { Text("City (leave empty for GPS)", color = colors.onSurfaceVariant) },
+                    placeholder   = { Text("e.g. Ljubljana", color = colors.onSurfaceVariant.copy(alpha = 0.5f)) },
+                    singleLine    = true,
+                    trailingIcon  = {
+                        if (cityDraft.isNotBlank()) {
+                            IconButton(onClick = {
+                                scope.launch { preferencesManager.setManualCity(null) }
+                                cityDraft = ""
+                            }) {
+                                Icon(Icons.Filled.Close, contentDescription = "Clear", tint = colors.onSurfaceVariant)
+                            }
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor   = colors.primary,
+                        unfocusedBorderColor = colors.outline,
+                        focusedTextColor     = colors.onSurface,
+                        unfocusedTextColor   = colors.onSurface,
+                        cursorColor          = colors.primary,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onDone = {
+                            scope.launch { preferencesManager.setManualCity(cityDraft.trim().ifEmpty { null }) }
+                        }
+                    ),
+                )
+                Text(
+                    text  = "Tap Done on the keyboard to save. When set, GPS location is not used.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }        }
 
         // ── Causes ────────────────────────────────────────────
         SettingsSection(stringResource(R.string.settings_categories), colors) {

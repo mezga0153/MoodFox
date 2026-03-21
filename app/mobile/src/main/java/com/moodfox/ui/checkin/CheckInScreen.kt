@@ -111,6 +111,7 @@ fun CheckInScreen(
     weatherSnapshotDao: WeatherSnapshotDao,
     weatherService: WeatherService,
     weatherEnabled: Boolean,
+    manualCity: String?,
 ) {
     val colors = LocalAppColors.current
     val scope  = rememberCoroutineScope()
@@ -151,6 +152,17 @@ fun CheckInScreen(
 
     LaunchedEffect(weatherEnabled) {
         if (!weatherEnabled) return@LaunchedEffect
+        // Manual city takes priority over GPS
+        if (!manualCity.isNullOrBlank()) {
+            scope.launch {
+                val snap = weatherService.fetchByCity(manualCity) ?: return@launch
+                weatherSnapshotId = weatherSnapshotDao.insert(snap)
+                detectedCondition = snap.condition
+                detectedTempC     = snap.temperatureC
+                weatherDisplay    = "${conditionEmoji(snap.condition)} ${snap.condition} ${snap.temperatureC.toInt()}°C"
+            }
+            return@LaunchedEffect
+        }
         val hasPerm = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
