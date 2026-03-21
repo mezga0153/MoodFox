@@ -100,9 +100,9 @@ fun WelcomeScreen(
                 when (page) {
                     0 -> OnboardingPage0(preferencesManager = preferencesManager, scope = scope)
                     1 -> OnboardingPage1()
-                    2 -> OnboardingPage4(preferencesManager = preferencesManager)
-                    3 -> OnboardingPageReminders(preferencesManager = preferencesManager, reminderScheduler = reminderScheduler, scope = scope)
-                    4 -> OnboardingPageWeather(preferencesManager = preferencesManager, scope = scope)
+                    2 -> OnboardingPageReminders(preferencesManager = preferencesManager, reminderScheduler = reminderScheduler, scope = scope)
+                    3 -> OnboardingPageWeather(preferencesManager = preferencesManager, scope = scope)
+                    4 -> OnboardingPage4(preferencesManager = preferencesManager)
                 }
             }
 
