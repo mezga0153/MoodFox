@@ -1,8 +1,12 @@
 package com.moodfox.data.local
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
@@ -18,6 +22,9 @@ import org.dhatim.fastexcel.Workbook
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -70,7 +77,7 @@ class BackupManager @Inject constructor(
         shareIntent(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     }
 
-    suspend fun backupZip(): Intent = withContext(Dispatchers.IO) {
+    suspend fun backupZip(): String = withContext(Dispatchers.IO) {
         val entries    = moodEntryDao.getAllList()
         val categories = causeCategoryDao.getAllList()
         val snapshots  = weatherSnapshotDao.getAllList()
@@ -115,10 +122,11 @@ class BackupManager @Inject constructor(
             }
         }.toString()
 
-        val stamp = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
-            .withZone(ZoneId.systemDefault()).format(Instant.now())
-        val zipFile = File(context.cacheDir, "moodfox_backup_$stamp.zip")
-        ZipOutputStream(zipFile.outputStream().buffered()).use { zip ->
+        val date = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault()).format(Instant.now())
+        val fileName = "MoodFox Backup $date.zip"
+
+        val tmpZip = File(context.cacheDir, "moodfox_backup_tmp.zip")
+        ZipOutputStream(tmpZip.outputStream().buffered()).use { zip ->
             for ((name, content) in listOf(
                 "mood_entries.json"      to entriesJson,
                 "cause_categories.json"  to categoriesJson,
@@ -129,7 +137,30 @@ class BackupManager @Inject constructor(
                 zip.closeEntry()
             }
         }
-        shareIntent(zipFile, "application/zip")
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, "application/zip")
+                put(MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            val itemUri = context.contentResolver.insert(collection, values)
+                ?: throw IOException("Cannot create file in Downloads")
+            context.contentResolver.openOutputStream(itemUri)?.use { out ->
+                FileInputStream(tmpZip).use { it.copyTo(out) }
+            }
+            values.clear()
+            values.put(MediaStore.Downloads.IS_PENDING, 0)
+            context.contentResolver.update(itemUri, values, null, null)
+        } else {
+            val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.cacheDir
+            val dest = File(dir, fileName)
+            FileInputStream(tmpZip).use { input -> FileOutputStream(dest).use { input.copyTo(it) } }
+        }
+
+        tmpZip.delete()
+        fileName
     }
 
     suspend fun restoreZip(uri: Uri): Boolean = withContext(Dispatchers.IO) {

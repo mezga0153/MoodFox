@@ -1,5 +1,10 @@
 package com.moodfox.ui.onboarding
 
+import android.Manifest
+import android.app.TimePickerDialog
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,9 +18,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -32,15 +42,17 @@ import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import com.moodfox.R
 import com.moodfox.data.local.PreferencesManager
+import com.moodfox.domain.ReminderScheduler
 import com.moodfox.ui.theme.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private val PAGE_COUNT = 3
+private val PAGE_COUNT = 5
 
 @Composable
 fun WelcomeScreen(
     preferencesManager: PreferencesManager,
+    reminderScheduler: ReminderScheduler,
     onFinished: () -> Unit,
     isReview: Boolean = false,
 ) {
@@ -89,6 +101,8 @@ fun WelcomeScreen(
                     0 -> OnboardingPage0(preferencesManager = preferencesManager, scope = scope)
                     1 -> OnboardingPage1()
                     2 -> OnboardingPage4(preferencesManager = preferencesManager)
+                    3 -> OnboardingPageReminders(preferencesManager = preferencesManager, reminderScheduler = reminderScheduler, scope = scope)
+                    4 -> OnboardingPageWeather(preferencesManager = preferencesManager, scope = scope)
                 }
             }
 
@@ -530,9 +544,251 @@ private fun OnboardingPage4(preferencesManager: PreferencesManager) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun WelcomeToneChip(label: String, selected: Boolean, colors: AppColors, onClick: () -> Unit) {
-    val bg     = if (selected) colors.primary else colors.cardSurface
+private fun OnboardingPageReminders(
+    preferencesManager: PreferencesManager,
+    reminderScheduler: ReminderScheduler,
+    scope: CoroutineScope,
+) {
+    val colors = LocalAppColors.current
+    val context = LocalContext.current
+    val remindersEnabled by preferencesManager.remindersEnabled.collectAsState(initial = false)
+    val reminderTimes by preferencesManager.reminderTimes.collectAsState(initial = """["09:00","13:00","20:00"]""")
+    val quietStart by preferencesManager.quietHoursStart.collectAsState(initial = "23:00")
+    val quietEnd by preferencesManager.quietHoursEnd.collectAsState(initial = "07:00")
+
+    val notifPermLauncher = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                scope.launch {
+                    preferencesManager.setRemindersEnabled(true)
+                    reminderScheduler.scheduleAll(reminderTimes, quietStart, quietEnd)
+                }
+            }
+        }
+    } else null
+
+    val parsedTimes = remember(reminderTimes) {
+        try {
+            val arr = org.json.JSONArray(reminderTimes)
+            (0 until arr.length()).map { arr.getString(it) }
+        } catch (_: Exception) { listOf("09:00", "13:00", "20:00") }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(text = "🔔", style = MaterialTheme.typography.headlineLarge.copy(fontSize = 64.sp))
+        Spacer(Modifier.height(24.dp))
+        Text(
+            text = stringResource(R.string.onboarding_reminders_title),
+            style = MaterialTheme.typography.headlineMedium,
+            color = colors.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.onboarding_reminders_subtitle),
+            style = MaterialTheme.typography.bodyLarge,
+            color = colors.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(28.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(colors.cardSurface)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.NotificationsActive, contentDescription = null, tint = colors.primary, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = stringResource(R.string.onboarding_reminders_enable),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(
+                checked = remindersEnabled,
+                onCheckedChange = { enabled ->
+                    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notifPermLauncher?.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        scope.launch {
+                            preferencesManager.setRemindersEnabled(enabled)
+                            if (enabled) reminderScheduler.scheduleAll(reminderTimes, quietStart, quietEnd)
+                            else reminderScheduler.cancelAll()
+                        }
+                    }
+                },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = colors.primary,
+                    checkedTrackColor = colors.primary.copy(alpha = 0.4f),
+                ),
+            )
+        }
+
+        if (remindersEnabled) {
+            Spacer(Modifier.height(16.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement   = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                parsedTimes.forEach { t ->
+                    Surface(
+                        shape  = RoundedCornerShape(20.dp),
+                        color  = colors.primary.copy(alpha = 0.15f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, colors.primary.copy(alpha = 0.4f)),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                        ) {
+                            Text(t, style = MaterialTheme.typography.bodyMedium, color = colors.onSurface)
+                            if (parsedTimes.size > 1) {
+                                IconButton(
+                                    onClick = {
+                                        scope.launch {
+                                            val newList = parsedTimes.filter { it != t }
+                                            val newJson = org.json.JSONArray(newList).toString()
+                                            preferencesManager.setReminderTimes(newJson)
+                                            reminderScheduler.scheduleAll(newJson, quietStart, quietEnd)
+                                        }
+                                    },
+                                    modifier = Modifier.size(24.dp),
+                                ) {
+                                    Icon(Icons.Filled.Close, contentDescription = "Remove", tint = colors.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                                }
+                            } else {
+                                Spacer(Modifier.width(8.dp))
+                            }
+                        }
+                    }
+                }
+
+                if (parsedTimes.size < 8) {
+                    Surface(
+                        shape  = RoundedCornerShape(20.dp),
+                        color  = colors.cardSurface,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, colors.outline.copy(alpha = 0.4f)),
+                        modifier = Modifier.clickable {
+                            TimePickerDialog(context, { _, h, m ->
+                                scope.launch {
+                                    val timeStr = "%02d:%02d".format(h, m)
+                                    val newList = (parsedTimes + timeStr).distinct().sorted()
+                                    val newJson = org.json.JSONArray(newList).toString()
+                                    preferencesManager.setReminderTimes(newJson)
+                                    reminderScheduler.scheduleAll(newJson, quietStart, quietEnd)
+                                }
+                            }, 12, 0, true).show()
+                        },
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = null, tint = colors.primary, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.settings_reminders_add_time), style = MaterialTheme.typography.bodyMedium, color = colors.primary)
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.onboarding_reminders_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun OnboardingPageWeather(
+    preferencesManager: PreferencesManager,
+    scope: CoroutineScope,
+) {
+    val colors = LocalAppColors.current
+    val weatherEnabled by preferencesManager.weatherEnabled.collectAsState(initial = false)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(text = "🌤", style = MaterialTheme.typography.headlineLarge.copy(fontSize = 64.sp))
+        Spacer(Modifier.height(24.dp))
+        Text(
+            text = stringResource(R.string.onboarding_weather_title),
+            style = MaterialTheme.typography.headlineMedium,
+            color = colors.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.onboarding_weather_subtitle),
+            style = MaterialTheme.typography.bodyLarge,
+            color = colors.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(28.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(colors.cardSurface)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.WbSunny, contentDescription = null, tint = colors.primary, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = stringResource(R.string.onboarding_weather_enable),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(
+                checked = weatherEnabled,
+                onCheckedChange = { enabled ->
+                    scope.launch { preferencesManager.setWeatherEnabled(enabled) }
+                },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = colors.primary,
+                    checkedTrackColor = colors.primary.copy(alpha = 0.4f),
+                ),
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.onboarding_weather_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun WelcomeToneChip(label: String, selected: Boolean, colors: AppColors, onClick: () -> Unit) {    val bg     = if (selected) colors.primary else colors.cardSurface
     val border = if (selected) colors.primary else colors.outline
     val text   = if (selected) (if (colors.isDark) Color.Black.copy(alpha = 0.85f) else Color.White)
                  else colors.onSurfaceVariant

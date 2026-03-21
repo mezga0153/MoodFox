@@ -366,7 +366,12 @@ fun SettingsScreen(
                 colors  = colors,
                 onClick = {
                     scope.launch {
-                        context.startActivity(Intent.createChooser(backupManager.backupZip(), null))
+                        try {
+                            val fileName = backupManager.backupZip()
+                            android.widget.Toast.makeText(context, "Saved: $fileName", android.widget.Toast.LENGTH_LONG).show()
+                        } catch (_: Exception) {
+                            android.widget.Toast.makeText(context, "Backup failed", android.widget.Toast.LENGTH_SHORT).show()
+                        }
                     }
                 },
             )

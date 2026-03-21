@@ -36,6 +36,14 @@
     <string name="onboarding_page3_subtitle">Not +10 all the time. A calm average between −2 and +2, without big swings. Steady wins.</string>
     <string name="onboarding_page4_title">Make it yours</string>
     <string name="onboarding_page4_subtitle">Pick a helper and a color theme. You can change these later.</string>
+    <string name="onboarding_reminders_title">Stay consistent</string>
+    <string name="onboarding_reminders_subtitle">A few gentle nudges per day help build the habit. No spam — just a quiet tap when it\'s time to check in.</string>
+    <string name="onboarding_reminders_enable">Enable reminders</string>
+    <string name="onboarding_reminders_note">You can customize times and quiet hours in Settings.</string>
+    <string name="onboarding_weather_title">Weather affects mood</string>
+    <string name="onboarding_weather_subtitle">Rain, heat, grey skies — they all leave a mark. MoodFox can log the weather at each check-in so you can spot patterns over time. Your location is used only in that moment and never stored.</string>
+    <string name="onboarding_weather_enable">Enable weather tracking</string>
+    <string name="onboarding_weather_note">Location is requested only at check-in and never saved.</string>
 
     <!-- Check-in screen -->
     <string name="checkin_title">How are you feeling?</string>

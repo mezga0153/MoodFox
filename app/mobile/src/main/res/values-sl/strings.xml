@@ -36,6 +36,14 @@
     <string name="onboarding_page3_subtitle">Ne +10 ves čas. Miren povprečni med −2 in +2, brez velikih nihanj. Stabilno zmaga.</string>
     <string name="onboarding_page4_title">Prilagodi svojemu okusu</string>
     <string name="onboarding_page4_subtitle">Izberi pomočnika in barvno temo. Kasneje jih lahko spreminjaš.</string>
+    <string name="onboarding_reminders_title">Ostani dosleden</string>
+    <string name="onboarding_reminders_subtitle">Nekaj nežnih opomnikov na dan pomaga vzpostaviti navado. Brez neželene pošte — samo tiho potrkanje, ko je čas za prijavo.</string>
+    <string name="onboarding_reminders_enable">Omogoči opomnike</string>
+    <string name="onboarding_reminders_note">Čase in tihe ure lahko prilagodiš v Nastavitvah.</string>
+    <string name="onboarding_weather_title">Vreme vpliva na razpoloženje</string>
+    <string name="onboarding_weather_subtitle">Dež, vročina, sivo nebo — vse pusti sled. MoodFox lahko ob vsaki prijavi zabeleži vreme, da sčasoma prepoznaš vzorce. Tvoja lokacija se uporablja samo v tistem trenutku in se nikoli ne shranjuje.</string>
+    <string name="onboarding_weather_enable">Omogoči sledenje vremenu</string>
+    <string name="onboarding_weather_note">Lokacija se zahteva samo ob prijavi in se nikoli ne shrani.</string>
 
     <!-- Check-in screen (sl) -->
     <string name="checkin_title">Kako se počutiš?</string>

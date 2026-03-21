@@ -102,6 +102,7 @@ fun MoodFoxNavGraph(
             composable("welcome") {
                 WelcomeScreen(
                     preferencesManager = preferencesManager,
+                    reminderScheduler  = reminderScheduler,
                     onFinished = {
                         navController.navigate("checkin") {
                             popUpTo("welcome") { inclusive = true }
@@ -147,6 +148,7 @@ fun MoodFoxNavGraph(
             composable("how_it_works") {
                 WelcomeScreen(
                     preferencesManager = preferencesManager,
+                    reminderScheduler  = reminderScheduler,
                     isReview = true,
                     onFinished = { navController.popBackStack() },
                 )

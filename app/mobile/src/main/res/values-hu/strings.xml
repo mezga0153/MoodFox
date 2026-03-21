@@ -36,6 +36,14 @@
     <string name="onboarding_page3_subtitle">Nem mindig +10. Egy nyugodt átlag −2 és +2 között, nagy kilengések nélkül. A stabil nyeri.</string>
     <string name="onboarding_page4_title">Tedd személyessé</string>
     <string name="onboarding_page4_subtitle">Válassz segítőt és színtémát. Ezt később is módosíthatod.</string>
+    <string name="onboarding_reminders_title">Maradj következetes</string>
+    <string name="onboarding_reminders_subtitle">Néhány napi emlékeztető segít kialakítani a szokást. Semmi spam — csak egy halk kopogtatás, mikor ideje bejelentkezni.</string>
+    <string name="onboarding_reminders_enable">Emlékeztetők engedélyezése</string>
+    <string name="onboarding_reminders_note">Az időpontokat és a csendes órákat a Beállításokban személyre szabhatod.</string>
+    <string name="onboarding_weather_title">Az időjárás befolyásolja a hangulatot</string>
+    <string name="onboarding_weather_subtitle">Eső, hőség, szürke égbolt — mindnek nyoma marad. A MoodFox minden bejelentkezéskor rögzítheti az időjárást, hogy mintákat fedezhess fel. A helyzeted csak abban a pillanatban van felhasználva, soha nem tárolódik.</string>
+    <string name="onboarding_weather_enable">Időjárás-követés engedélyezése</string>
+    <string name="onboarding_weather_note">A helyzeted csak bejelentkezéskor kéri az alkalmazás, és soha nem kerül mentésre.</string>
 
     <!-- Check-in screen (hu) -->
     <string name="checkin_title">Hogy érzed magad?</string>
