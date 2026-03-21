@@ -41,9 +41,15 @@
     <string name="onboarding_reminders_enable">Enable reminders</string>
     <string name="onboarding_reminders_note">You can customize times and quiet hours in Settings.</string>
     <string name="onboarding_weather_title">Weather affects mood</string>
-    <string name="onboarding_weather_subtitle">Rain, heat, grey skies — they all leave a mark. MoodFox can log the weather at each check-in so you can spot patterns over time. Your location is used only in that moment and never stored.</string>
+    <string name="onboarding_weather_subtitle">Rain, heat, grey skies — they all leave a mark. MoodFox can log the weather at each check-in so you can spot patterns over time.</string>
     <string name="onboarding_weather_enable">Enable weather tracking</string>
     <string name="onboarding_weather_note">Location is requested only at check-in and never saved.</string>
+    <string name="onboarding_weather_note_city">Your GPS location is not used when a city is set.</string>
+    <string name="onboarding_weather_use_gps">Use my location</string>
+    <string name="onboarding_weather_gps_desc">Weather is fetched using GPS at each check-in</string>
+    <string name="onboarding_weather_enter_city">Enter a city</string>
+    <string name="onboarding_weather_city_desc">Weather is always fetched for your home city</string>
+    <string name="onboarding_weather_city_tap_change">Tap to change your city</string>
 
     <!-- Check-in screen -->
     <string name="checkin_title">How are you feeling?</string>
@@ -111,6 +117,15 @@
     <string name="settings_weather">Weather context</string>
     <string name="settings_weather_enabled">Enable weather tracking</string>
     <string name="settings_weather_city_hint">City name (optional fallback)</string>
+    <string name="settings_weather_using_gps">Using GPS</string>
+    <string name="settings_weather_gps_desc">Weather fetched from your GPS location</string>
+    <string name="settings_weather_city_tap_change">Tap to change</string>
+    <string name="settings_weather_change">Change</string>
+    <string name="settings_weather_set_city">Set city</string>
+    <string name="settings_weather_use_gps">Use GPS</string>
+    <string name="city_search_title">Search city</string>
+    <string name="city_search_placeholder">Type a city name…</string>
+    <string name="city_search_empty">No cities found</string>
     <string name="settings_categories">Manage causes</string>
     <string name="settings_backup">Backup &amp; export</string>
     <string name="settings_export">Export data</string>

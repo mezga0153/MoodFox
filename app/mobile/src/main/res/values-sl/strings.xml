@@ -41,9 +41,15 @@
     <string name="onboarding_reminders_enable">Omogoči opomnike</string>
     <string name="onboarding_reminders_note">Čase in tihe ure lahko prilagodiš v Nastavitvah.</string>
     <string name="onboarding_weather_title">Vreme vpliva na razpoloženje</string>
-    <string name="onboarding_weather_subtitle">Dež, vročina, sivo nebo — vse pusti sled. MoodFox lahko ob vsaki prijavi zabeleži vreme, da sčasoma prepoznaš vzorce. Tvoja lokacija se uporablja samo v tistem trenutku in se nikoli ne shranjuje.</string>
+    <string name="onboarding_weather_subtitle">Dež, vročina, sivo nebo — vse pusti sled. MoodFox lahko ob vsaki prijavi zabeleži vreme, da sčasoma prepoznaš vzorce.</string>
     <string name="onboarding_weather_enable">Omogoči sledenje vremenu</string>
     <string name="onboarding_weather_note">Lokacija se zahteva samo ob prijavi in se nikoli ne shrani.</string>
+    <string name="onboarding_weather_note_city">GPS lokacija se ne uporablja, ko je nastavljeno mesto.</string>
+    <string name="onboarding_weather_use_gps">Uporabi mojo lokacijo</string>
+    <string name="onboarding_weather_gps_desc">Vreme se pridobi z GPS-om ob vsaki prijavi</string>
+    <string name="onboarding_weather_enter_city">Vnesi mesto</string>
+    <string name="onboarding_weather_city_desc">Vreme se vedno pridobi za tvoje domače mesto</string>
+    <string name="onboarding_weather_city_tap_change">Dotakni se za spremembo mesta</string>
 
     <!-- Check-in screen (sl) -->
     <string name="checkin_title">Kako se počutiš?</string>
@@ -111,6 +117,15 @@
     <string name="settings_weather">Vremenski kontekst</string>
     <string name="settings_weather_enabled">Omogoči sledenje vremena</string>
     <string name="settings_weather_city_hint">Ime mesta (opcijsko)</string>
+    <string name="settings_weather_using_gps">Uporaba GPS</string>
+    <string name="settings_weather_gps_desc">Vreme se pridobi z GPS lokacijo</string>
+    <string name="settings_weather_city_tap_change">Dotakni se za spremembo</string>
+    <string name="settings_weather_change">Spremeni</string>
+    <string name="settings_weather_set_city">Nastavi mesto</string>
+    <string name="settings_weather_use_gps">Uporabi GPS</string>
+    <string name="city_search_title">Išči mesto</string>
+    <string name="city_search_placeholder">Vnesi ime mesta…</string>
+    <string name="city_search_empty">Ni najdenih mest</string>
     <string name="settings_categories">Upravljanje vzrokov</string>
     <string name="settings_backup">Varnostna kopija in izvoz</string>
     <string name="settings_export">Izvozi podatke</string>

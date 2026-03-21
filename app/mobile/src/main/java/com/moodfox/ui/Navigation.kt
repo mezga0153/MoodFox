@@ -101,6 +101,7 @@ fun MoodFoxNavGraph(
                 WelcomeScreen(
                     preferencesManager = preferencesManager,
                     reminderScheduler  = reminderScheduler,
+                    weatherService     = weatherService,
                     onFinished = {
                         navController.navigate("checkin") {
                             popUpTo("welcome") { inclusive = true }
@@ -142,6 +143,7 @@ fun MoodFoxNavGraph(
                     moodEntryDao       = moodEntryDao,
                     causeCategoryDao   = causeCategoryDao,
                     weatherSnapshotDao = weatherSnapshotDao,
+                    weatherService     = weatherService,
                     onNavigateToCategories = { navController.navigate("settings/categories") },
                     onNavigateToHowItWorks = { navController.navigate("how_it_works") },
                 )
@@ -150,6 +152,7 @@ fun MoodFoxNavGraph(
                 WelcomeScreen(
                     preferencesManager = preferencesManager,
                     reminderScheduler  = reminderScheduler,
+                    weatherService     = weatherService,
                     isReview = true,
                     onFinished = { navController.popBackStack() },
                 )

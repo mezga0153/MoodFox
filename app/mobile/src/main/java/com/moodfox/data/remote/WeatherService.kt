@@ -9,6 +9,14 @@ import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class GeoCity(
+    val name: String,
+    val country: String,
+    val admin1: String,
+    val latitude: Double,
+    val longitude: Double,
+)
+
 @Singleton
 class WeatherService @Inject constructor(private val client: HttpClient) {
 
@@ -33,21 +41,31 @@ class WeatherService @Inject constructor(private val client: HttpClient) {
         )
     } catch (_: Exception) { null }
 
-    suspend fun fetchByCity(city: String): WeatherSnapshot? = try {
+    suspend fun searchCities(query: String): List<GeoCity> = try {
         @Serializable
-        data class GeoResult(val latitude: Double, val longitude: Double, val name: String)
+        data class GeoResult(
+            val name: String,
+            val country: String? = null,
+            val admin1: String? = null,
+            val latitude: Double,
+            val longitude: Double,
+        )
         @Serializable
         data class GeoResponse(val results: List<GeoResult> = emptyList())
 
         val geo: GeoResponse = client.get("https://geocoding-api.open-meteo.com/v1/search") {
-            parameter("name", city)
-            parameter("count", 1)
+            parameter("name", query)
+            parameter("count", 5)
             parameter("language", "en")
             parameter("format", "json")
         }.body()
-        val result = geo.results.firstOrNull() ?: return null
-        fetchCurrent(result.latitude, result.longitude)?.copy(city = result.name)
-    } catch (_: Exception) { null }
+        geo.results.map { GeoCity(it.name, it.country ?: "", it.admin1 ?: "", it.latitude, it.longitude) }
+    } catch (_: Exception) { emptyList() }
+
+    suspend fun fetchByCity(city: String): WeatherSnapshot? {
+        val result = searchCities(city).firstOrNull() ?: return null
+        return fetchCurrent(result.latitude, result.longitude)?.copy(city = result.name)
+    }
 
     private fun weatherCodeToCondition(code: Int): String = when (code) {
         0 -> "Clear"
