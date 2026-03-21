@@ -470,16 +470,33 @@ private fun CausesCard(
         color    = colors.cardSurface,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
-            Text(
-                text     = stringResource(R.string.checkin_causes_label),
-                style    = MaterialTheme.typography.labelLarge,
-                color    = colors.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 12.dp),
-            )
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Row(
+                modifier              = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text  = stringResource(R.string.checkin_causes_label),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.onSurfaceVariant,
+                )
+                if (hiddenCount > 0 || showAll) {
+                    TextButton(
+                        onClick        = onToggleAll,
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                        colors         = ButtonDefaults.textButtonColors(contentColor = colors.primary),
+                    ) {
+                        Text(
+                            text  = if (showAll) "Show less" else "+$hiddenCount more",
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                    }
+                }
+            }
             chunked.forEach { row ->
                 Row(
-                    modifier              = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    modifier              = Modifier.fillMaxWidth().padding(bottom = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     row.forEach { cat ->
@@ -492,18 +509,6 @@ private fun CausesCard(
                         )
                     }
                     repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
-            if (hiddenCount > 0 || showAll) {
-                TextButton(
-                    onClick        = onToggleAll,
-                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 2.dp),
-                    colors         = ButtonDefaults.textButtonColors(contentColor = colors.primary),
-                ) {
-                    Text(
-                        text  = if (showAll) "Show less" else "+$hiddenCount more",
-                        style = MaterialTheme.typography.labelLarge,
-                    )
                 }
             }
         }
@@ -529,7 +534,7 @@ private fun CauseChip(
             .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(14.dp))
             .clickable { onClick() }
-            .padding(horizontal = 6.dp, vertical = 10.dp),
+            .padding(horizontal = 6.dp, vertical = 7.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = category.emoji, fontSize = 22.sp)
