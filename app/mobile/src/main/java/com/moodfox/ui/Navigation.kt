@@ -36,7 +36,7 @@ private val bottomTabs = listOf(
     Triple("settings", Icons.Filled.Settings,     R.string.tab_settings),
 )
 
-private val hiddenBottomBarRoutes = setOf("welcome", "settings/categories", "settings/log_viewer")
+private val hiddenBottomBarRoutes = setOf("welcome", "how_it_works", "settings/categories", "settings/log_viewer")
 
 @Composable
 fun MoodFoxNavGraph(
@@ -132,6 +132,14 @@ fun MoodFoxNavGraph(
                     backupManager      = backupManager,
                     onNavigateToCategories = { navController.navigate("settings/categories") },
                     onNavigateToLogViewer = { navController.navigate("settings/log_viewer") },
+                    onNavigateToHowItWorks = { navController.navigate("how_it_works") },
+                )
+            }
+            composable("how_it_works") {
+                WelcomeScreen(
+                    preferencesManager = preferencesManager,
+                    isReview = true,
+                    onFinished = { navController.popBackStack() },
                 )
             }
             composable("settings/categories") {

@@ -27,6 +27,7 @@
     <string name="cd_add">Dodaj</string>
 
     <!-- Onboarding -->
+    <string name="onboarding_page0_subtitle">Sledi vzorcem svojih čustev.</string>
     <string name="onboarding_page1_title">Kako se počutiš?</string>
     <string name="onboarding_page1_subtitle">Hitra, poštena sledenje razpoloženju — večkrat na dan.</string>
     <string name="onboarding_page2_title">Lestvica</string>
@@ -144,4 +145,8 @@
     <!-- Error / empty states -->
     <string name="placeholder_no_data">—</string>
     <string name="error_generic">Prišlo je do napake.</string>
+
+    <!-- Settings -->
+    <string name="settings_how_it_works">Kako deluje</string>
+    <string name="settings_about">O aplikaciji</string>
 </resources>

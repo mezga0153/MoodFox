@@ -1,39 +1,60 @@
 package com.moodfox.ui.onboarding
 
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
 import com.moodfox.R
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.ui.theme.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private val PAGE_COUNT = 4
+private val PAGE_COUNT = 3
 
 @Composable
 fun WelcomeScreen(
     preferencesManager: PreferencesManager,
     onFinished: () -> Unit,
+    isReview: Boolean = false,
 ) {
     val colors = LocalAppColors.current
     val pagerState = rememberPagerState(pageCount = { PAGE_COUNT })
     val scope = rememberCoroutineScope()
 
+    val background = Brush.verticalGradient(
+        listOf(colors.primary.copy(alpha = 0.12f), colors.surface),
+    )
+
     val complete: () -> Unit = {
         scope.launch {
-            preferencesManager.setOnboardingComplete(true)
+            if (!isReview) preferencesManager.setOnboardingComplete(true)
             onFinished()
         }
     }
@@ -41,9 +62,9 @@ fun WelcomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.surface),
+            .background(background),
     ) {
-        // Skip link — visible on all pages
+        // Skip / Done link — visible on all pages
         TextButton(
             onClick = complete,
             modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
@@ -65,10 +86,9 @@ fun WelcomeScreen(
                 modifier = Modifier.weight(1f),
             ) { page ->
                 when (page) {
-                    0 -> OnboardingPage1()
-                    1 -> OnboardingPage2()
-                    2 -> OnboardingPage3()
-                    3 -> OnboardingPage4(preferencesManager = preferencesManager)
+                    0 -> OnboardingPage0(preferencesManager = preferencesManager, scope = scope)
+                    1 -> OnboardingPage1()
+                    2 -> OnboardingPage4(preferencesManager = preferencesManager)
                 }
             }
 
@@ -119,6 +139,135 @@ fun WelcomeScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun OnboardingPage0(preferencesManager: PreferencesManager, scope: CoroutineScope) {
+    val colors = LocalAppColors.current
+    val themePresetName by preferencesManager.themePreset.collectAsState(initial = "PURPLE_DARK")
+    val language by preferencesManager.language.collectAsState(initial = "")
+
+    val currentPreset = try { ThemePreset.valueOf(themePresetName) } catch (_: Exception) { ThemePreset.PURPLE_DARK }
+    val currentMode = currentPreset.mode
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        // Fox hero image
+        Image(
+            painter = painterResource(R.drawable.fox),
+            contentDescription = null,
+            modifier = Modifier
+                .size(120.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop,
+        )
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = "MoodFox",
+            style = MaterialTheme.typography.headlineLarge,
+            color = colors.onSurface,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.onboarding_page0_subtitle),
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+
+        Spacer(Modifier.height(36.dp))
+
+        // Language row
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Language,
+                contentDescription = null,
+                tint = colors.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.settings_language),
+                style = MaterialTheme.typography.labelLarge,
+                color = colors.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement   = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            data class Lang(val tag: String, val labelRes: Int)
+            val langs = listOf(
+                Lang("en", R.string.language_en),
+                Lang("sl", R.string.language_sl),
+                Lang("hu", R.string.language_hu),
+            )
+            langs.forEach { lang ->
+                WelcomeToneChip(
+                    label    = stringResource(lang.labelRes),
+                    selected = language == lang.tag,
+                    colors   = colors,
+                ) {
+                    scope.launch {
+                        preferencesManager.setLanguage(lang.tag)
+                        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(lang.tag))
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // Dark / Light row
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                imageVector = if (currentMode == ThemeMode.DARK) Icons.Filled.DarkMode else Icons.Filled.LightMode,
+                contentDescription = null,
+                tint = colors.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.settings_theme),
+                style = MaterialTheme.typography.labelLarge,
+                color = colors.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            WelcomeToneChip(
+                label    = stringResource(R.string.theme_dark),
+                selected = currentMode == ThemeMode.DARK,
+                colors   = colors,
+            ) {
+                val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.DARK }
+                scope.launch { preferencesManager.setThemePreset(target.name) }
+            }
+            WelcomeToneChip(
+                label    = stringResource(R.string.theme_light),
+                selected = currentMode == ThemeMode.LIGHT,
+                colors   = colors,
+            ) {
+                val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.LIGHT }
+                scope.launch { preferencesManager.setThemePreset(target.name) }
+            }
+        }
+    }
+}
+
 @Composable
 private fun OnboardingPage1() {
     val colors = LocalAppColors.current
@@ -127,16 +276,14 @@ private fun OnboardingPage1() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // Helper character placeholder
-        Box(
+        Image(
+            painter = painterResource(R.drawable.fox),
+            contentDescription = null,
             modifier = Modifier
                 .size(140.dp)
-                .clip(CircleShape)
-                .background(colors.cardSurface),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(text = "🦊", style = MaterialTheme.typography.headlineLarge.copy(fontSize = 64.sp))
-        }
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop,
+        )
         Spacer(Modifier.height(32.dp))
         Text(
             text = stringResource(R.string.onboarding_page1_title),
@@ -183,7 +330,7 @@ private fun OnboardingPage2() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            listOf("😭", "😢", "😕", "😐", "🙂", "😊", "🤩").forEachIndexed { i, emoji ->
+            listOf("😭", "😢", "😕", "😐", "🙂", "😊", "🤩").forEach { emoji ->
                 Text(text = emoji, style = MaterialTheme.typography.titleLarge)
             }
         }
@@ -303,6 +450,25 @@ private fun OnboardingPage4(preferencesManager: PreferencesManager) {
             }
             Spacer(Modifier.height(10.dp))
         }
+    }
+}
+
+@Composable
+private fun WelcomeToneChip(label: String, selected: Boolean, colors: AppColors, onClick: () -> Unit) {
+    val bg     = if (selected) colors.primary else colors.cardSurface
+    val border = if (selected) colors.primary else colors.outline
+    val text   = if (selected) (if (colors.isDark) Color.Black.copy(alpha = 0.85f) else Color.White)
+                 else colors.onSurfaceVariant
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(20.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelLarge, color = text)
     }
 }
 

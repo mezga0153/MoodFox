@@ -33,6 +33,7 @@ google-services.json
 # Release keystore
 *.keystore
 *.jks
+local.properties
 
 # Android build outputs
 app/mobile/build/

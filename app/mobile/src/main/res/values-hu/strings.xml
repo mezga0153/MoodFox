@@ -27,6 +27,7 @@
     <string name="cd_add">Hozzáadás</string>
 
     <!-- Onboarding -->
+    <string name="onboarding_page0_subtitle">Kövesd érzelmi mintáidat.</string>
     <string name="onboarding_page1_title">Hogy érzed magad?</string>
     <string name="onboarding_page1_subtitle">Gyors, őszinte hangulatkövetés — naponta többször.</string>
     <string name="onboarding_page2_title">A skála</string>
@@ -142,4 +143,8 @@
     <!-- Error / empty states -->
     <string name="placeholder_no_data">—</string>
     <string name="error_generic">Valami hiba történt.</string>
+
+    <!-- Settings -->
+    <string name="settings_how_it_works">Hogyan működik</string>
+    <string name="settings_about">Névjegy</string>
 </resources>

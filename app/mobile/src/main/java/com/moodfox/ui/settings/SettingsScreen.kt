@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -42,6 +43,7 @@ fun SettingsScreen(
     backupManager: BackupManager,
     onNavigateToCategories: () -> Unit,
     onNavigateToLogViewer: () -> Unit,
+    onNavigateToHowItWorks: () -> Unit,
 ) {
     val colors = LocalAppColors.current
     val scope  = rememberCoroutineScope()
@@ -62,12 +64,17 @@ fun SettingsScreen(
         ActivityResultContracts.StartActivityForResult()
     ) {}
 
+    val screenGradient = Brush.verticalGradient(
+        listOf(colors.primary.copy(alpha = 0.12f), colors.surface),
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.surface)
+            .background(screenGradient)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             text  = stringResource(R.string.settings_title),
@@ -76,175 +83,170 @@ fun SettingsScreen(
             fontWeight = FontWeight.Bold,
         )
 
-        Spacer(Modifier.height(20.dp))
-
-        // ── Theme section ────────────────────────────────
-        SectionHeader(stringResource(R.string.settings_theme), colors)
-        Spacer(Modifier.height(10.dp))
-
         val currentPreset = try { ThemePreset.valueOf(themePresetName) } catch (_: Exception) { ThemePreset.PURPLE_DARK }
         val currentMode   = currentPreset.mode
 
-        // Dark / Light chips
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ToneChip(
-                label    = stringResource(R.string.theme_dark),
-                selected = currentMode == ThemeMode.DARK,
-                colors   = colors,
-            ) {
-                val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.DARK }
-                scope.launch { preferencesManager.setThemePreset(target.name) }
+        // ── Theme ─────────────────────────────────────────────
+        SettingsSection(stringResource(R.string.settings_theme), colors) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ToneChip(
+                    label    = stringResource(R.string.theme_dark),
+                    selected = currentMode == ThemeMode.DARK,
+                    colors   = colors,
+                ) {
+                    val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.DARK }
+                    scope.launch { preferencesManager.setThemePreset(target.name) }
+                }
+                ToneChip(
+                    label    = stringResource(R.string.theme_light),
+                    selected = currentMode == ThemeMode.LIGHT,
+                    colors   = colors,
+                ) {
+                    val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.LIGHT }
+                    scope.launch { preferencesManager.setThemePreset(target.name) }
+                }
             }
-            ToneChip(
-                label    = stringResource(R.string.theme_light),
-                selected = currentMode == ThemeMode.LIGHT,
-                colors   = colors,
+            Spacer(Modifier.height(12.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier              = Modifier.fillMaxWidth(),
             ) {
-                val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.LIGHT }
-                scope.launch { preferencesManager.setThemePreset(target.name) }
+                ThemePreset.entries.groupBy { it.accentHue }.forEach { (hue, presets) ->
+                    val selected     = currentPreset.accentHue == hue
+                    val previewColor = buildAppColors(hue, currentMode).primary
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(previewColor)
+                            .then(
+                                if (selected) Modifier.border(2.5.dp, colors.onSurface, CircleShape)
+                                else Modifier
+                            )
+                            .clickable {
+                                val target = presets.first { it.mode == currentMode }
+                                scope.launch { preferencesManager.setThemePreset(target.name) }
+                            },
+                    )
+                }
             }
         }
-        Spacer(Modifier.height(12.dp))
 
-        // Color swatches
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier              = Modifier.fillMaxWidth(),
-        ) {
-            ThemePreset.entries.groupBy { it.accentHue }.forEach { (hue, presets) ->
-                val selected     = currentPreset.accentHue == hue
-                val previewColor = buildAppColors(hue, currentMode).primary
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(previewColor)
-                        .then(
-                            if (selected) Modifier.border(2.5.dp, colors.onSurface, CircleShape)
-                            else Modifier
-                        )
-                        .clickable {
-                            val target = presets.first { it.mode == currentMode }
-                            scope.launch { preferencesManager.setThemePreset(target.name) }
-                        },
-                )
-            }
+        // ── Language ──────────────────────────────────────────
+        SettingsSection(stringResource(R.string.settings_language), colors) {
+            LanguagePicker(
+                current  = language,
+                colors   = colors,
+                onSelect = { tag ->
+                    scope.launch {
+                        preferencesManager.setLanguage(tag)   // persist first
+                        val localeList = if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                                         else LocaleListCompat.forLanguageTags(tag)
+                        AppCompatDelegate.setApplicationLocales(localeList)
+                    }
+                },
+            )
         }
 
-        Spacer(Modifier.height(20.dp))
+        // ── Appearance ────────────────────────────────────────
+        SettingsSection(stringResource(R.string.settings_animations), colors) {
+            SettingsToggle(
+                label   = stringResource(R.string.settings_animations),
+                checked = animationsEnabled,
+                icon    = Icons.Filled.Animation,
+                colors  = colors,
+                onChange = { scope.launch { preferencesManager.setAnimationsEnabled(it) } },
+            )
+            SettingsToggle(
+                label   = stringResource(R.string.settings_reduce_motion),
+                checked = reduceMotion,
+                icon    = Icons.Filled.MotionPhotosOff,
+                colors  = colors,
+                onChange = { scope.launch { preferencesManager.setReduceMotion(it) } },
+            )
+        }
 
-        // ── Language ─────────────────────────────────────
-        SectionHeader(stringResource(R.string.settings_language), colors)
-        Spacer(Modifier.height(10.dp))
-        LanguagePicker(
-            current  = language,
-            colors   = colors,
-            onSelect = { tag ->
-                scope.launch {
-                    preferencesManager.setLanguage(tag)   // persist first
-                    val localeList = if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                                     else LocaleListCompat.forLanguageTags(tag)
-                    AppCompatDelegate.setApplicationLocales(localeList)
-                }
-            },
-        )
+        // ── Reminders ─────────────────────────────────────────
+        SettingsSection(stringResource(R.string.settings_reminders), colors) {
+            SettingsToggle(
+                label   = stringResource(R.string.settings_reminders_enabled),
+                checked = remindersEnabled,
+                icon    = Icons.Filled.NotificationsActive,
+                colors  = colors,
+                onChange = { enabled ->
+                    scope.launch {
+                        preferencesManager.setRemindersEnabled(enabled)
+                        if (enabled) reminderScheduler.scheduleAll(reminderTimes, quietStart, quietEnd)
+                        else reminderScheduler.cancelAll()
+                    }
+                },
+            )
+        }
 
-        Spacer(Modifier.height(20.dp))
+        // ── Weather ───────────────────────────────────────────
+        SettingsSection(stringResource(R.string.settings_weather), colors) {
+            SettingsToggle(
+                label   = stringResource(R.string.settings_weather_enabled),
+                checked = weatherEnabled,
+                icon    = Icons.Filled.WbSunny,
+                colors  = colors,
+                onChange = { scope.launch { preferencesManager.setWeatherEnabled(it) } },
+            )
+        }
 
-        // ── Appearance ───────────────────────────────────
-        SectionHeader(stringResource(R.string.settings_animations), colors)
-        SettingsToggle(
-            label   = stringResource(R.string.settings_animations),
-            checked = animationsEnabled,
-            icon    = Icons.Filled.Animation,
-            colors  = colors,
-            onChange = { scope.launch { preferencesManager.setAnimationsEnabled(it) } },
-        )
-        SettingsToggle(
-            label   = stringResource(R.string.settings_reduce_motion),
-            checked = reduceMotion,
-            icon    = Icons.Filled.MotionPhotosOff,
-            colors  = colors,
-            onChange = { scope.launch { preferencesManager.setReduceMotion(it) } },
-        )
+        // ── Causes ────────────────────────────────────────────
+        SettingsSection(stringResource(R.string.settings_categories), colors) {
+            SettingsNavRow(
+                label   = stringResource(R.string.settings_categories),
+                icon    = Icons.Filled.Category,
+                colors  = colors,
+                onClick = onNavigateToCategories,
+            )
+        }
 
-        Spacer(Modifier.height(20.dp))
+        // ── Backup ────────────────────────────────────────────
+        SettingsSection(stringResource(R.string.settings_backup), colors) {
+            SettingsNavRow(
+                label   = stringResource(R.string.backup_export_csv),
+                icon    = Icons.Filled.FileDownload,
+                colors  = colors,
+                onClick = {
+                    scope.launch {
+                        val intent = backupManager.exportCsv(allEntries)
+                        shareLauncher.launch(intent)
+                    }
+                },
+            )
+            SettingsNavRow(
+                label   = stringResource(R.string.backup_export_json),
+                icon    = Icons.Filled.FileDownload,
+                colors  = colors,
+                onClick = {
+                    scope.launch {
+                        val intent = backupManager.exportJson(allEntries)
+                        shareLauncher.launch(intent)
+                    }
+                },
+            )
+        }
 
-        // ── Reminders ────────────────────────────────────
-        SectionHeader(stringResource(R.string.settings_reminders), colors)
-        SettingsToggle(
-            label   = stringResource(R.string.settings_reminders_enabled),
-            checked = remindersEnabled,
-            icon    = Icons.Filled.NotificationsActive,
-            colors  = colors,
-            onChange = { enabled ->
-                scope.launch {
-                    preferencesManager.setRemindersEnabled(enabled)
-                    if (enabled) reminderScheduler.scheduleAll(reminderTimes, quietStart, quietEnd)
-                    else reminderScheduler.cancelAll()
-                }
-            },
-        )
+        // ── About ─────────────────────────────────────────────
+        SettingsSection(stringResource(R.string.settings_about), colors) {
+            SettingsNavRow(
+                label   = stringResource(R.string.settings_how_it_works),
+                icon    = Icons.Filled.Info,
+                colors  = colors,
+                onClick = onNavigateToHowItWorks,
+            )
+            SettingsNavRow(
+                label   = stringResource(R.string.settings_debug_logs),
+                icon    = Icons.Filled.BugReport,
+                colors  = colors,
+                onClick = onNavigateToLogViewer,
+            )
+        }
 
-        Spacer(Modifier.height(20.dp))
-
-        // ── Weather ──────────────────────────────────────
-        SectionHeader(stringResource(R.string.settings_weather), colors)
-        SettingsToggle(
-            label   = stringResource(R.string.settings_weather_enabled),
-            checked = weatherEnabled,
-            icon    = Icons.Filled.WbSunny,
-            colors  = colors,
-            onChange = { scope.launch { preferencesManager.setWeatherEnabled(it) } },
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        // ── Categories ───────────────────────────────────
-        SectionHeader(stringResource(R.string.settings_categories), colors)
-        SettingsNavRow(
-            label   = stringResource(R.string.settings_categories),
-            icon    = Icons.Filled.Category,
-            colors  = colors,
-            onClick = onNavigateToCategories,
-        )
-
-        Spacer(Modifier.height(20.dp))
-        // ── Backup / export ──────────────────────
-        SectionHeader(stringResource(R.string.settings_backup), colors)
-        SettingsNavRow(
-            label   = stringResource(R.string.backup_export_csv),
-            icon    = Icons.Filled.FileDownload,
-            colors  = colors,
-            onClick = {
-                scope.launch {
-                    val intent = backupManager.exportCsv(allEntries)
-                    shareLauncher.launch(intent)
-                }
-            },
-        )
-        SettingsNavRow(
-            label   = stringResource(R.string.backup_export_json),
-            icon    = Icons.Filled.FileDownload,
-            colors  = colors,
-            onClick = {
-                scope.launch {
-                    val intent = backupManager.exportJson(allEntries)
-                    shareLauncher.launch(intent)
-                }
-            },
-        )
-
-        Spacer(Modifier.height(20.dp))
-        // ── Debug ────────────────────────────────────────
-        SettingsNavRow(
-            label   = "Debug log",
-            icon    = Icons.Filled.BugReport,
-            colors  = colors,
-            onClick = onNavigateToLogViewer,
-        )
-
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(8.dp))
     }
 }
 
@@ -474,7 +476,6 @@ private fun ToneChip(label: String, selected: Boolean, colors: AppColors, onClic
 private fun LanguagePicker(current: String, colors: AppColors, onSelect: (String) -> Unit) {
     data class Lang(val tag: String, val labelRes: Int)
     val langs = listOf(
-        Lang("",   R.string.language_system),
         Lang("en", R.string.language_en),
         Lang("sl", R.string.language_sl),
         Lang("hu", R.string.language_hu),
@@ -490,6 +491,26 @@ private fun LanguagePicker(current: String, colors: AppColors, onSelect: (String
                 colors   = colors,
             ) { onSelect(lang.tag) }
         }
+    }
+}
+
+@Composable
+private fun SettingsSection(title: String, colors: AppColors, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.cardSurface)
+            .padding(16.dp),
+    ) {
+        Text(
+            text  = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = colors.primary,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+        content()
     }
 }
 

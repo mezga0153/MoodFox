@@ -95,10 +95,14 @@ fun CheckInScreen(
         }
     }
 
+    val screenGradient = Brush.verticalGradient(
+        listOf(colors.primary.copy(alpha = 0.12f), colors.surface),
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.surface),
+            .background(screenGradient),
     ) {
         // ── Scrollable content ────────────────────────────
         Column(

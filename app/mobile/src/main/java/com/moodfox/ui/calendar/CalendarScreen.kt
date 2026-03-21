@@ -3,23 +3,37 @@ package com.moodfox.ui.calendar
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import com.moodfox.R
 import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
@@ -29,6 +43,7 @@ import com.moodfox.ui.components.localizedCauseName
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import java.time.*
 import java.time.format.TextStyle
@@ -77,9 +92,11 @@ private fun moodEmoji(value: Int) = SCALE_EMOJIS[value.coerceIn(-10, 10)] ?: "�
 fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDao) {
     val colors = LocalAppColors.current
     val today  = LocalDate.now()
+    val scope  = rememberCoroutineScope()
 
     var displayMonth by remember { mutableStateOf(YearMonth.from(today)) }
     var selectedDay  by remember { mutableStateOf<LocalDate?>(null) }
+    var showAddSheet by remember { mutableStateOf(false) }
 
     val allCategories by causeCategoryDao.getAll().collectAsState(initial = emptyList())
     val categoryMap: Map<Long, CauseCategory> = remember(allCategories) {
@@ -104,8 +121,7 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
 
     val monthStats: Map<LocalDate, DayStats> = remember(byDate, displayMonth) {
         val first = displayMonth.atDay(1)
-        val last  = displayMonth.atEndOfMonth()
-        (0..Period.between(first, last.plusDays(1)).days - 1).associate { offset ->
+        (0 until displayMonth.lengthOfMonth()).associate { offset ->
             val d = first.plusDays(offset.toLong())
             val es = byDate[d] ?: emptyList()
             val avg = if (es.isEmpty()) 0f else es.map { it.moodValue }.average().toFloat()
@@ -115,10 +131,14 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
 
     val selectedDayEntries = selectedDay?.let { byDate[it] } ?: emptyList()
 
+    val screenGradient = Brush.verticalGradient(
+        listOf(colors.primary.copy(alpha = 0.12f), colors.surface),
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.surface)
+            .background(screenGradient)
             .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
         // ── Month navigation ─────────────────────────────
@@ -200,6 +220,36 @@ fun CalendarScreen(moodEntryDao: MoodEntryDao, causeCategoryDao: CauseCategoryDa
                 textAlign = TextAlign.Center,
             )
         }
+
+        // ── Add entry FAB ────────────────────────────────
+        if (selectedDay != null && selectedDay!! < today) {
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = { showAddSheet = true },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                border = BorderStroke(1.dp, colors.primary),
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Add entry", color = colors.primary)
+            }
+        }
+    }
+
+    // ── Add entry bottom sheet ───────────────────────────
+    if (showAddSheet && selectedDay != null) {
+        AddEntrySheet(
+            date             = selectedDay!!,
+            categories       = allCategories.filter { it.isActive },
+            onDismiss        = { showAddSheet = false },
+            onSave           = { entry ->
+                scope.launch {
+                    moodEntryDao.insert(entry)
+                    showAddSheet = false
+                }
+            },
+            colors           = colors,
+        )
     }
 }
 
@@ -242,21 +292,27 @@ private fun CalendarGrid(
                                 .weight(1f)
                                 .aspectRatio(1f)
                                 .padding(2.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    when {
-                                        isSelected -> colors.primary.copy(alpha = 0.25f)
-                                        else       -> bg
-                                    }
-                                )
-                                .border(
-                                    width  = if (isSelected) 2.dp else if (isToday) 1.5.dp else 0.dp,
-                                    color  = if (isSelected) colors.primary else if (isToday) colors.primary.copy(0.5f) else Color.Transparent,
-                                    shape  = CircleShape,
-                                )
                                 .clickable(enabled = !isFuture) { onDayClick(date) },
-                            contentAlignment = Alignment.Center,
                         ) {
+                            // Circle background + border (clipped independently)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .background(
+                                        when {
+                                            isSelected -> colors.primary.copy(alpha = 0.25f)
+                                            else       -> bg
+                                        }
+                                    )
+                                    .border(
+                                        width  = if (isSelected) 2.dp else if (isToday) 1.5.dp else 0.dp,
+                                        color  = if (isSelected) colors.primary else if (isToday) colors.primary.copy(0.5f) else Color.Transparent,
+                                        shape  = CircleShape,
+                                    ),
+                            )
+                            // Day number — shift up when overlays shown
+                            val hasEntries = (stats?.entries?.size ?: 0) > 0
                             Text(
                                 text  = "$dayNum",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -264,11 +320,37 @@ private fun CalendarGrid(
                                     isFuture   -> colors.onSurfaceVariant.copy(alpha = 0.3f)
                                     isSelected -> colors.primary
                                     isToday    -> colors.onSurface
-                                    (stats?.entries?.size ?: 0) > 0 -> colors.onSurface
+                                    hasEntries -> colors.onSurface
                                     else       -> colors.onSurfaceVariant
                                 },
                                 fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                                modifier   = Modifier
+                                    .align(Alignment.Center)
+                                    .offset(y = if (hasEntries) (-4).dp else 0.dp),
                             )
+                            // Bottom-left: avg score, Bottom-right: emoji (unclipped)
+                            if (hasEntries && stats != null) {
+                                val avgLabel = if (stats.avg >= 0f) "+%.0f".format(stats.avg)
+                                               else "%.0f".format(stats.avg)
+                                Text(
+                                    text       = avgLabel,
+                                    fontSize   = 10.sp,
+                                    color      = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    lineHeight = 10.sp,
+                                    modifier   = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .padding(start = 3.dp, bottom = 2.dp),
+                                )
+                                Text(
+                                    text       = moodEmoji(stats.avg.toInt()),
+                                    fontSize   = 10.sp,
+                                    lineHeight = 10.sp,
+                                    modifier   = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(end = 3.dp, bottom = 2.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -422,5 +504,325 @@ private fun EntryRow(
                 color = colors.onSurface,
             )
         }
+    }
+}
+
+// ── Add entry bottom sheet ────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun AddEntrySheet(
+    date: LocalDate,
+    categories: List<CauseCategory>,
+    onDismiss: () -> Unit,
+    onSave: (MoodEntry) -> Unit,
+    colors: AppColors,
+) {
+    var moodValue      by remember { mutableIntStateOf(0) }
+    var selectedCauses by remember { mutableStateOf(setOf<Long>()) }
+    var note           by remember { mutableStateOf("") }
+    var showNote       by remember { mutableStateOf(false) }
+    var showAllCauses  by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    // Default time: 12:00 or current time if date == today
+    val now = LocalTime.now()
+    var selectedHour   by remember { mutableIntStateOf(12) }
+    var selectedMinute by remember { mutableIntStateOf(0) }
+
+    val timePickerState = rememberTimePickerState(
+        initialHour   = selectedHour,
+        initialMinute = selectedMinute,
+        is24Hour      = true,
+    )
+
+    val dateLabel = "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${date.year}"
+    val timeLabel = "%02d:%02d".format(selectedHour, selectedMinute)
+
+    val density = LocalDensity.current
+    var trackWidthPx by remember { mutableFloatStateOf(0f) }
+    val thumbColor = when {
+        moodValue > 2  -> colors.secondary
+        moodValue < -2 -> colors.tertiary
+        else           -> colors.primary
+    }
+    val trackGradient = Brush.horizontalGradient(listOf(colors.tertiary, colors.primary, colors.secondary))
+    val fraction = (moodValue + 10f) / 20f
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor   = colors.cardSurface,
+        dragHandle       = { BottomSheetDefaults.DragHandle(color = colors.outline) },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Header
+            Text(
+                text       = "Add entry — $dateLabel",
+                style      = MaterialTheme.typography.titleMedium,
+                color      = colors.onSurface,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(4.dp))
+
+            // Time picker row
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier              = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { showTimePicker = true }
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text  = "🕐 $timeLabel",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = colors.primary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Emoji + score
+            val emoji = moodEmoji(moodValue)
+            val scoreLabel = if (moodValue >= 0) "+$moodValue" else "$moodValue"
+            Text(text = emoji, fontSize = 56.sp)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text       = scoreLabel,
+                style      = MaterialTheme.typography.headlineSmall,
+                color      = thumbColor,
+                fontWeight = FontWeight.Bold,
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // Slider
+            Surface(shape = RoundedCornerShape(20.dp), color = colors.surface, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(72.dp)
+                            .onSizeChanged { trackWidthPx = it.width.toFloat() }
+                            .pointerInput(trackWidthPx) {
+                                detectHorizontalDragGestures(
+                                    onDragStart = { offset ->
+                                        if (trackWidthPx > 0f)
+                                            moodValue = ((offset.x / trackWidthPx) * 20f - 10f).toInt().coerceIn(-10, 10)
+                                    },
+                                    onHorizontalDrag = { change, _ ->
+                                        change.consume()
+                                        if (trackWidthPx > 0f)
+                                            moodValue = ((change.position.x / trackWidthPx) * 20f - 10f).toInt().coerceIn(-10, 10)
+                                    },
+                                )
+                            }
+                            .pointerInput(trackWidthPx) {
+                                detectTapGestures { offset ->
+                                    if (trackWidthPx > 0f)
+                                        moodValue = ((offset.x / trackWidthPx) * 20f - 10f).toInt().coerceIn(-10, 10)
+                                }
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                            val trackY = size.height * 0.42f
+                            val trackH = with(density) { 10.dp.toPx() }
+                            drawRoundRect(
+                                brush        = trackGradient,
+                                topLeft      = Offset(0f, trackY - trackH / 2),
+                                size         = Size(size.width, trackH),
+                                cornerRadius = CornerRadius(trackH / 2),
+                            )
+                            val b2Start = (8f / 20f) * size.width
+                            val b2End   = (12f / 20f) * size.width
+                            drawRoundRect(
+                                color        = colors.accent.copy(alpha = 0.20f),
+                                topLeft      = Offset(b2Start, trackY - trackH / 2 - 2f),
+                                size         = Size(b2End - b2Start, trackH + 4f),
+                                cornerRadius = CornerRadius(6f),
+                            )
+                            listOf(-10, -5, 0, 5, 10).forEach { tick ->
+                                val x = ((tick + 10f) / 20f) * size.width
+                                drawLine(
+                                    color       = colors.onSurfaceVariant.copy(alpha = 0.18f),
+                                    start       = Offset(x, trackY - 10f),
+                                    end         = Offset(x, trackY + 10f),
+                                    strokeWidth = with(density) { 1.5.dp.toPx() },
+                                    cap         = StrokeCap.Round,
+                                )
+                            }
+                            val thumbX = fraction * size.width
+                            drawCircle(color = thumbColor.copy(alpha = 0.20f), radius = with(density) { 22.dp.toPx() }, center = Offset(thumbX, trackY))
+                            drawCircle(color = colors.cardSurface, radius = with(density) { 16.dp.toPx() }, center = Offset(thumbX, trackY))
+                            drawCircle(color = thumbColor, radius = with(density) { 12.dp.toPx() }, center = Offset(thumbX, trackY))
+                        }
+                        Row(
+                            modifier              = Modifier.fillMaxWidth().padding(top = 40.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            listOf(-10, -5, -2, 0, 2, 5, 10).forEach { tick ->
+                                val active = tick == moodValue
+                                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text       = if (tick > 0) "+$tick" else "$tick",
+                                        fontSize   = if (active) 13.sp else 11.sp,
+                                        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                                        color      = if (active) thumbColor else colors.onSurfaceVariant.copy(alpha = 0.55f),
+                                        textAlign  = TextAlign.Center,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Causes
+            if (categories.isNotEmpty()) {
+                val visibleCats = if (showAllCauses) categories else categories.take(6)
+                val hiddenCount = (categories.size - 6).coerceAtLeast(0)
+                Surface(shape = RoundedCornerShape(20.dp), color = colors.surface, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        Text(
+                            text     = stringResource(R.string.checkin_causes_label),
+                            style    = MaterialTheme.typography.labelLarge,
+                            color    = colors.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 10.dp),
+                        )
+                        visibleCats.chunked(3).forEach { row ->
+                            Row(
+                                modifier              = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                row.forEach { cat ->
+                                    val sel = cat.id in selectedCauses
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(if (sel) colors.primaryContainer else Color.Transparent)
+                                            .border(1.dp, if (sel) colors.primary else colors.outline, RoundedCornerShape(12.dp))
+                                            .clickable {
+                                                selectedCauses = if (cat.id in selectedCauses) selectedCauses - cat.id else selectedCauses + cat.id
+                                            }
+                                            .padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(text = cat.emoji, fontSize = 20.sp)
+                                            Text(
+                                                text      = localizedCauseName(cat),
+                                                style     = MaterialTheme.typography.labelSmall,
+                                                color     = if (sel) colors.primary else colors.onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                                maxLines  = 1,
+                                            )
+                                        }
+                                    }
+                                }
+                                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                            }
+                        }
+                        if (hiddenCount > 0 || showAllCauses) {
+                            TextButton(
+                                onClick        = { showAllCauses = !showAllCauses },
+                                contentPadding = PaddingValues(0.dp),
+                                colors         = ButtonDefaults.textButtonColors(contentColor = colors.primary),
+                            ) {
+                                Text(if (showAllCauses) "Show less" else "+$hiddenCount more", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+
+            // Note toggle
+            TextButton(
+                onClick = { showNote = !showNote },
+                colors  = ButtonDefaults.textButtonColors(contentColor = colors.primary),
+            ) {
+                Text(if (showNote) stringResource(R.string.checkin_note_hide) else stringResource(R.string.checkin_note_add))
+            }
+            if (showNote) {
+                OutlinedTextField(
+                    value         = note,
+                    onValueChange = { if (it.length <= 300) note = it },
+                    modifier      = Modifier.fillMaxWidth(),
+                    placeholder   = { Text(stringResource(R.string.checkin_note_hint), color = colors.onSurfaceVariant) },
+                    minLines      = 3,
+                    colors        = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor   = colors.primary,
+                        unfocusedBorderColor = colors.outline,
+                        focusedTextColor     = colors.onSurface,
+                        unfocusedTextColor   = colors.onSurface,
+                    ),
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            // Save
+            Button(
+                onClick = {
+                    val dt = LocalDateTime.of(date, LocalTime.of(selectedHour, selectedMinute))
+                    val ts = dt.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    val causeJson = JSONArray().apply { selectedCauses.forEach { put(it) } }.toString()
+                    onSave(MoodEntry(timestamp = ts, moodValue = moodValue, causeIds = causeJson, note = note.trimEnd().ifEmpty { null }))
+                },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape    = RoundedCornerShape(16.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = colors.primary),
+            ) {
+                Text(stringResource(R.string.button_save), style = MaterialTheme.typography.titleMedium)
+            }
+        }
+    }
+
+    // Time picker dialog
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            containerColor   = colors.cardSurface,
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedHour   = timePickerState.hour
+                    selectedMinute = timePickerState.minute
+                    showTimePicker = false
+                }) { Text(stringResource(R.string.button_ok), color = colors.primary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text(stringResource(R.string.button_cancel), color = colors.onSurfaceVariant)
+                }
+            },
+            text = {
+                TimePicker(
+                    state  = timePickerState,
+                    colors = TimePickerDefaults.colors(
+                        clockDialColor          = colors.surface,
+                        clockDialSelectedContentColor = colors.cardSurface,
+                        clockDialUnselectedContentColor = colors.onSurface,
+                        selectorColor           = colors.primary,
+                        containerColor          = colors.cardSurface,
+                        periodSelectorBorderColor = colors.outline,
+                        timeSelectorSelectedContainerColor = colors.primaryContainer,
+                        timeSelectorUnselectedContainerColor = colors.surface,
+                        timeSelectorSelectedContentColor = colors.primary,
+                        timeSelectorUnselectedContentColor = colors.onSurface,
+                    ),
+                )
+            },
+        )
     }
 }

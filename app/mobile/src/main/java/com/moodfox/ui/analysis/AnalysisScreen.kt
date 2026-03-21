@@ -58,10 +58,14 @@ fun AnalysisScreen(
     val byTime  = remember(entries) { MoodStats.byTimeOfDay(entries) }
     val causes  = remember(entries) { MoodStats.causeFrequencies(entries) }
 
+    val screenGradient = Brush.verticalGradient(
+        listOf(colors.primary.copy(alpha = 0.12f), colors.surface),
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.surface)
+            .background(screenGradient)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {

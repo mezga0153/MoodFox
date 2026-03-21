@@ -27,6 +27,7 @@
     <string name="cd_add">Add</string>
 
     <!-- Onboarding -->
+    <string name="onboarding_page0_subtitle">Track your emotional patterns.</string>
     <string name="onboarding_page1_title">How are you feeling?</string>
     <string name="onboarding_page1_subtitle">Quick, honest mood tracking — several times a day.</string>
     <string name="onboarding_page2_title">The Scale</string>
@@ -110,6 +111,8 @@
     <string name="settings_delete_all">Delete all data</string>
     <string name="settings_delete_confirm">This will permanently delete all your mood entries. This cannot be undone.</string>
     <string name="settings_debug_logs">View debug logs</string>
+    <string name="settings_how_it_works">How it works</string>
+    <string name="settings_about">About</string>
 
     <!-- Category manager -->
     <string name="categories_title">Manage causes</string>
