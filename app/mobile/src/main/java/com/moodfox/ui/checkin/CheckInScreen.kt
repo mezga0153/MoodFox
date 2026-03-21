@@ -52,8 +52,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
@@ -306,10 +304,17 @@ fun CheckInScreen(
         }
 
         // ── Sticky save button ────────────────────────────
+        AnimatedVisibility(
+            visible = !showNote,
+            enter   = fadeIn(tween(200)),
+            exit    = fadeOut(tween(150)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter),
+        ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter)
                 .background(
                     Brush.verticalGradient(
                         listOf(Color.Transparent, colors.surface, colors.surface),
@@ -366,6 +371,7 @@ fun CheckInScreen(
                     }
                 }
             }
+        }
         }
     }
 }
@@ -649,7 +655,6 @@ private fun NoteCard(
     onNoteChange: (String) -> Unit,
     colors: AppColors,
 ) {
-    val bringIntoViewRequester = remember { BringIntoViewRequester() }
     Surface(
         shape    = RoundedCornerShape(20.dp),
         color    = colors.cardSurface,
@@ -684,9 +689,6 @@ private fun NoteCard(
             AnimatedVisibility(visible = showNote) {
                 Column {
                     Spacer(Modifier.height(10.dp))
-                    LaunchedEffect(note) {
-                        bringIntoViewRequester.bringIntoView()
-                    }
                     OutlinedTextField(
                         value         = note,
                         onValueChange = onNoteChange,
@@ -695,8 +697,7 @@ private fun NoteCard(
                         },
                         modifier      = Modifier
                             .fillMaxWidth()
-                            .focusRequester(focusRequester)
-                            .bringIntoViewRequester(bringIntoViewRequester),
+                            .focusRequester(focusRequester),
                         colors        = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor   = colors.primary,
                             unfocusedBorderColor = colors.outline,
