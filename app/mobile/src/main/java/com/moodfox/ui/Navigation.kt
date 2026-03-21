@@ -138,7 +138,6 @@ fun MoodFoxNavGraph(
                 SettingsScreen(
                     preferencesManager = preferencesManager,
                     reminderScheduler  = reminderScheduler,
-                    moodEntryDao       = moodEntryDao,
                     backupManager      = backupManager,
                     onNavigateToCategories = { navController.navigate("settings/categories") },
                     onNavigateToLogViewer = { navController.navigate("settings/log_viewer") },

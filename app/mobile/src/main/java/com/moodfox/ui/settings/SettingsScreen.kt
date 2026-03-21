@@ -52,7 +52,6 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     preferencesManager: PreferencesManager,
     reminderScheduler: ReminderScheduler,
-    moodEntryDao: com.moodfox.data.local.db.MoodEntryDao,
     backupManager: BackupManager,
     onNavigateToCategories: () -> Unit,
     onNavigateToLogViewer: () -> Unit,
@@ -67,14 +66,14 @@ fun SettingsScreen(
     val reminderTimes   by preferencesManager.reminderTimes.collectAsState(initial = "[\"09:00\",\"13:00\",\"19:00\"]")
     val quietStart      by preferencesManager.quietHoursStart.collectAsState(initial = "22:00")
     val quietEnd        by preferencesManager.quietHoursEnd.collectAsState(initial = "08:00")
-    val animationsEnabled by preferencesManager.animationsEnabled.collectAsState(initial = true)
-    val reduceMotion    by preferencesManager.reduceMotion.collectAsState(initial = false)
     val language        by preferencesManager.language.collectAsState(initial = "")
 
-    val allEntries by moodEntryDao.getAll().collectAsState(initial = emptyList())
-    val shareLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) {}
+    var showRestoreConfirm by remember { mutableStateOf(false) }
+    var pendingRestoreUri  by remember { mutableStateOf<android.net.Uri?>(null) }
+    var restoring          by remember { mutableStateOf(false) }
+    val restoreLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) { pendingRestoreUri = uri; showRestoreConfirm = true } }
 
     val screenGradient = Brush.verticalGradient(
         listOf(colors.primary.copy(alpha = 0.12f), colors.surface),
@@ -157,24 +156,6 @@ fun SettingsScreen(
                         AppCompatDelegate.setApplicationLocales(localeList)
                     }
                 },
-            )
-        }
-
-        // ── Appearance ────────────────────────────────────────
-        SettingsSection(stringResource(R.string.settings_animations), colors) {
-            SettingsToggle(
-                label   = stringResource(R.string.settings_animations),
-                checked = animationsEnabled,
-                icon    = Icons.Filled.Animation,
-                colors  = colors,
-                onChange = { scope.launch { preferencesManager.setAnimationsEnabled(it) } },
-            )
-            SettingsToggle(
-                label   = stringResource(R.string.settings_reduce_motion),
-                checked = reduceMotion,
-                icon    = Icons.Filled.MotionPhotosOff,
-                colors  = colors,
-                onChange = { scope.launch { preferencesManager.setReduceMotion(it) } },
             )
         }
 
@@ -375,8 +356,7 @@ fun SettingsScreen(
                 colors  = colors,
                 onClick = {
                     scope.launch {
-                        val intent = backupManager.exportCsv(allEntries)
-                        shareLauncher.launch(intent)
+                        context.startActivity(Intent.createChooser(backupManager.exportCsv(), null))
                     }
                 },
             )
@@ -386,10 +366,56 @@ fun SettingsScreen(
                 colors  = colors,
                 onClick = {
                     scope.launch {
-                        val intent = backupManager.exportJson(allEntries)
-                        shareLauncher.launch(intent)
+                        context.startActivity(Intent.createChooser(backupManager.exportJson(), null))
                     }
                 },
+            )
+            SettingsNavRow(
+                label   = stringResource(R.string.backup_zip),
+                icon    = Icons.Filled.Archive,
+                colors  = colors,
+                onClick = {
+                    scope.launch {
+                        context.startActivity(Intent.createChooser(backupManager.backupZip(), null))
+                    }
+                },
+            )
+            SettingsNavRow(
+                label   = if (restoring) stringResource(R.string.restore_in_progress) else stringResource(R.string.restore_zip),
+                icon    = Icons.Filled.Unarchive,
+                colors  = colors,
+                onClick = { if (!restoring) restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
+            )
+        }
+
+        if (showRestoreConfirm && pendingRestoreUri != null) {
+            AlertDialog(
+                onDismissRequest = { showRestoreConfirm = false },
+                title = { Text(stringResource(R.string.restore_confirm_title), color = colors.onSurface) },
+                text  = { Text(stringResource(R.string.restore_confirm_message), color = colors.onSurfaceVariant) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showRestoreConfirm = false
+                        restoring = true
+                        scope.launch {
+                            val ok = backupManager.restoreZip(pendingRestoreUri!!)
+                            if (ok) {
+                                val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                                intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                                android.os.Process.killProcess(android.os.Process.myPid())
+                            } else {
+                                restoring = false
+                            }
+                        }
+                    }) { Text(stringResource(R.string.restore_confirm_yes)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showRestoreConfirm = false }) {
+                        Text(stringResource(R.string.restore_confirm_cancel))
+                    }
+                },
+                containerColor = colors.cardSurface,
             )
         }
 
