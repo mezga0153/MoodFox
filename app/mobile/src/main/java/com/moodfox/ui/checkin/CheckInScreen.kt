@@ -50,15 +50,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
 import org.json.JSONArray
-import kotlin.math.abs
 
-// ── Emoji anchors (5 key points) ────────────────────────
+// ── Emoji for every step on the scale ────────────────────
 private val SCALE_EMOJIS = mapOf(
-    -10 to "😭", -5 to "😔", 0 to "😐", 5 to "😊", 10 to "🤩",
+    -10 to "😭",
+    -9  to "😩",
+    -8  to "😢",
+    -7  to "😟",
+    -6  to "😞",
+    -5  to "😔",
+    -4  to "😕",
+    -3  to "🙁",
+    -2  to "😐",
+    -1  to "😑",
+     0  to "🙂",
+     1  to "😊",
+     2  to "😌",
+     3  to "😀",
+     4  to "😄",
+     5  to "😁",
+     6  to "🤩",
+     7  to "😎",
+     8  to "🥳",
+     9  to "😍",
+    10  to "🤯",
 )
 
-private fun emojiForValue(value: Int): String =
-    SCALE_EMOJIS.entries.minByOrNull { abs(it.key - value) }?.value ?: "😐"
+private fun emojiForValue(value: Int): String = SCALE_EMOJIS[value.coerceIn(-10, 10)] ?: "🙂"
 
 // ── Mood color ────────────────────────────────────────────
 @Composable
