@@ -128,7 +128,11 @@ fun MoodFoxNavGraph(
                 )
             }
             composable("analysis") {
-                AnalysisScreen(moodEntryDao = moodEntryDao, causeCategoryDao = causeCategoryDao)
+                AnalysisScreen(
+                    moodEntryDao       = moodEntryDao,
+                    causeCategoryDao   = causeCategoryDao,
+                    weatherSnapshotDao = weatherSnapshotDao,
+                )
             }
             composable("settings") {
                 SettingsScreen(

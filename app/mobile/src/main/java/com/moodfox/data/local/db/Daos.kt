@@ -62,4 +62,7 @@ interface WeatherSnapshotDao {
 
     @Query("SELECT * FROM weather_snapshots WHERE id = :id")
     suspend fun getById(id: Long): WeatherSnapshot?
+
+    @Query("SELECT * FROM weather_snapshots")
+    fun getAll(): kotlinx.coroutines.flow.Flow<List<WeatherSnapshot>>
 }

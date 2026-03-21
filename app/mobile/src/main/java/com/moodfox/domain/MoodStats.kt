@@ -129,6 +129,45 @@ object MoodStats {
             .sortedBy { it.bucket.ordinal }
     }
 
+    // ── Weather & mood correlation ────────────────────────────────────────────
+
+    data class ConditionMood(val condition: String, val avg: Float, val count: Int)
+
+    data class WeatherAnalysis(
+        val rainyAvg: Float?,
+        val dryAvg: Float?,
+        val byCondition: List<ConditionMood>,
+    )
+
+    fun weatherAnalysis(
+        entries: List<MoodEntry>,
+        snapshots: Map<Long, com.moodfox.data.local.db.WeatherSnapshot>,
+    ): WeatherAnalysis {
+        val withSnap = entries.mapNotNull { e ->
+            val snap = e.weatherSnapshotId?.let { snapshots[it] } ?: return@mapNotNull null
+            e to snap
+        }
+        val rainyMoods = withSnap.filter { (_, s) -> s.isRaining }.map { (e, _) -> e.moodValue.toFloat() }
+        val dryMoods   = withSnap.filter { (_, s) -> !s.isRaining }.map { (e, _) -> e.moodValue.toFloat() }
+
+        val grouped = withSnap
+            .groupBy { (_, s) -> s.condition }
+            .map { (cond, pairs) ->
+                ConditionMood(
+                    condition = cond,
+                    avg       = pairs.map { (e, _) -> e.moodValue.toFloat() }.average().toFloat(),
+                    count     = pairs.size,
+                )
+            }
+            .sortedByDescending { it.count }
+
+        return WeatherAnalysis(
+            rainyAvg     = if (rainyMoods.isEmpty()) null else rainyMoods.average().toFloat(),
+            dryAvg       = if (dryMoods.isEmpty()) null else dryMoods.average().toFloat(),
+            byCondition  = grouped,
+        )
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun Long.toLocalDate(): LocalDate =

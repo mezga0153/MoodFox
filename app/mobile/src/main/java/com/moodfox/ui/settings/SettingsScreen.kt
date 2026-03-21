@@ -1,5 +1,9 @@
 package com.moodfox.ui.settings
 
+import android.content.Intent
+import android.Manifest
+import android.app.TimePickerDialog
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -28,6 +32,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.LocaleListCompat
 import com.moodfox.R
 import com.moodfox.data.local.AppLogger
@@ -55,7 +60,7 @@ fun SettingsScreen(
 ) {
     val colors = LocalAppColors.current
     val scope  = rememberCoroutineScope()
-
+    val context = LocalContext.current
     val themePresetName by preferencesManager.themePreset.collectAsState(initial = "PURPLE_DARK")
     val weatherEnabled  by preferencesManager.weatherEnabled.collectAsState(initial = false)
     val remindersEnabled by preferencesManager.remindersEnabled.collectAsState(initial = false)
@@ -67,7 +72,6 @@ fun SettingsScreen(
     val language        by preferencesManager.language.collectAsState(initial = "")
 
     val allEntries by moodEntryDao.getAll().collectAsState(initial = emptyList())
-    val context    = androidx.compose.ui.platform.LocalContext.current
     val shareLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {}
@@ -176,19 +180,170 @@ fun SettingsScreen(
 
         // ── Reminders ─────────────────────────────────────────
         SettingsSection(stringResource(R.string.settings_reminders), colors) {
+            // Notification-permission launcher (Android 13+)
+            val notifPermLauncher = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                    if (granted) {
+                        scope.launch {
+                            preferencesManager.setRemindersEnabled(true)
+                            reminderScheduler.scheduleAll(reminderTimes, quietStart, quietEnd)
+                        }
+                    }
+                }
+            } else null
+
             SettingsToggle(
                 label   = stringResource(R.string.settings_reminders_enabled),
                 checked = remindersEnabled,
                 icon    = Icons.Filled.NotificationsActive,
                 colors  = colors,
                 onChange = { enabled ->
-                    scope.launch {
-                        preferencesManager.setRemindersEnabled(enabled)
-                        if (enabled) reminderScheduler.scheduleAll(reminderTimes, quietStart, quietEnd)
-                        else reminderScheduler.cancelAll()
+                    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notifPermLauncher?.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        scope.launch {
+                            preferencesManager.setRemindersEnabled(enabled)
+                            if (enabled) reminderScheduler.scheduleAll(reminderTimes, quietStart, quietEnd)
+                            else reminderScheduler.cancelAll()
+                        }
                     }
                 },
             )
+
+            if (remindersEnabled) {
+                Spacer(Modifier.height(8.dp))
+
+                // Parse current times
+                val parsedTimes = remember(reminderTimes) {
+                    try {
+                        val arr = org.json.JSONArray(reminderTimes)
+                        (0 until arr.length()).map { arr.getString(it) }
+                    } catch (_: Exception) { listOf("09:00") }
+                }
+
+                // Time chips
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement   = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    parsedTimes.forEach { t ->
+                        Surface(
+                            shape  = RoundedCornerShape(20.dp),
+                            color  = colors.primary.copy(alpha = 0.15f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, colors.primary.copy(alpha = 0.4f)),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                            ) {
+                                Text(t, style = MaterialTheme.typography.bodyMedium, color = colors.onSurface)
+                                if (parsedTimes.size > 1) {
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch {
+                                                val newList = parsedTimes.filter { it != t }
+                                                val newJson = org.json.JSONArray(newList).toString()
+                                                preferencesManager.setReminderTimes(newJson)
+                                                reminderScheduler.scheduleAll(newJson, quietStart, quietEnd)
+                                            }
+                                        },
+                                        modifier = Modifier.size(24.dp),
+                                    ) {
+                                        Icon(Icons.Filled.Close, contentDescription = "Remove", tint = colors.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                                    }
+                                } else {
+                                    Spacer(Modifier.width(8.dp))
+                                }
+                            }
+                        }
+                    }
+
+                    // Add time button (limit 8 slots)
+                    if (parsedTimes.size < 8) {
+                        Surface(
+                            shape  = RoundedCornerShape(20.dp),
+                            color  = colors.cardSurface,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, colors.outline.copy(alpha = 0.4f)),
+                            modifier = Modifier.clickable {
+                                val defaultH = 12; val defaultM = 0
+                                TimePickerDialog(context, { _, h, m ->
+                                    scope.launch {
+                                        val timeStr  = "%02d:%02d".format(h, m)
+                                        val newList  = (parsedTimes + timeStr).distinct().sorted()
+                                        val newJson  = org.json.JSONArray(newList).toString()
+                                        preferencesManager.setReminderTimes(newJson)
+                                        reminderScheduler.scheduleAll(newJson, quietStart, quietEnd)
+                                    }
+                                }, defaultH, defaultM, true).show()
+                            },
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = null, tint = colors.primary, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.settings_reminders_add_time), style = MaterialTheme.typography.bodyMedium, color = colors.primary)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Quiet hours row
+                var showQuietStartPicker by remember { mutableStateOf(false) }
+                var showQuietEndPicker   by remember { mutableStateOf(false) }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.BedtimeOff, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text  = stringResource(R.string.settings_quiet_hours),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = { showQuietStartPicker = true }) {
+                        Text(quietStart, color = colors.primary)
+                    }
+                    Text("–", color = colors.onSurfaceVariant)
+                    TextButton(onClick = { showQuietEndPicker = true }) {
+                        Text(quietEnd, color = colors.primary)
+                    }
+                }
+
+                if (showQuietStartPicker) {
+                    val (h, m) = quietStart.split(":").map { it.toIntOrNull() ?: 0 }
+                    TimePickerDialog(context, { _, hour, min ->
+                        scope.launch {
+                            val v = "%02d:%02d".format(hour, min)
+                            preferencesManager.setQuietHoursStart(v)
+                            reminderScheduler.scheduleAll(reminderTimes, v, quietEnd)
+                        }
+                        showQuietStartPicker = false
+                    }, h, m, true).also {
+                        it.setOnDismissListener { showQuietStartPicker = false }
+                    }.show()
+                }
+                if (showQuietEndPicker) {
+                    val (h, m) = quietEnd.split(":").map { it.toIntOrNull() ?: 0 }
+                    TimePickerDialog(context, { _, hour, min ->
+                        scope.launch {
+                            val v = "%02d:%02d".format(hour, min)
+                            preferencesManager.setQuietHoursEnd(v)
+                            reminderScheduler.scheduleAll(reminderTimes, quietStart, v)
+                        }
+                        showQuietEndPicker = false
+                    }, h, m, true).also {
+                        it.setOnDismissListener { showQuietEndPicker = false }
+                    }.show()
+                }
+            }
         }
 
         // ── Weather ───────────────────────────────────────────
@@ -240,12 +395,46 @@ fun SettingsScreen(
 
         // ── About ─────────────────────────────────────────────
         SettingsSection(stringResource(R.string.settings_about), colors) {
+            // Version
+            val versionName = remember {
+                try { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
+                catch (_: Exception) { "0.2.0" }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text  = stringResource(R.string.about_version),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colors.onSurface,
+                )
+                Text(
+                    text  = versionName ?: "0.2.0",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colors.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            // How it works
             SettingsNavRow(
                 label   = stringResource(R.string.settings_how_it_works),
                 icon    = Icons.Filled.Info,
                 colors  = colors,
                 onClick = onNavigateToHowItWorks,
             )
+            // Open source licenses
+            SettingsNavRow(
+                label   = stringResource(R.string.about_licenses),
+                icon    = Icons.Filled.Description,
+                colors  = colors,
+                onClick = {
+                    context.startActivity(
+                        Intent(context, com.google.android.gms.oss.licenses.OssLicensesMenuActivity::class.java)
+                    )
+                },
+            )
+            // Debug logs
             SettingsNavRow(
                 label   = stringResource(R.string.settings_debug_logs),
                 icon    = Icons.Filled.BugReport,

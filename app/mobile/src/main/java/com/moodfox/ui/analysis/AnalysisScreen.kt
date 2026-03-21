@@ -22,6 +22,7 @@ import com.moodfox.R
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.domain.MoodStats
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
@@ -41,6 +42,7 @@ private enum class Range(val labelRes: Int, val days: Int) {
 fun AnalysisScreen(
     moodEntryDao: MoodEntryDao,
     causeCategoryDao: CauseCategoryDao,
+    weatherSnapshotDao: WeatherSnapshotDao,
 ) {
     val colors = LocalAppColors.current
     var range  by remember { mutableStateOf(Range.D30) }
@@ -51,12 +53,15 @@ fun AnalysisScreen(
 
     val entries    by moodEntryDao.getByDateRange(from, to).collectAsState(initial = emptyList())
     val categories by causeCategoryDao.getActive().collectAsState(initial = emptyList())
+    val allSnapshots by weatherSnapshotDao.getAll().collectAsState(initial = emptyList())
+    val snapshotMap = remember(allSnapshots) { allSnapshots.associateBy { it.id } }
 
-    val summary = remember(entries) { MoodStats.periodSummary(entries) }
-    val ema     = remember(entries) { MoodStats.rollingEma(entries) }
-    val days    = remember(entries) { MoodStats.aggregateByDay(entries) }
-    val byTime  = remember(entries) { MoodStats.byTimeOfDay(entries) }
-    val causes  = remember(entries) { MoodStats.causeFrequencies(entries) }
+    val summary     = remember(entries) { MoodStats.periodSummary(entries) }
+    val ema         = remember(entries) { MoodStats.rollingEma(entries) }
+    val days        = remember(entries) { MoodStats.aggregateByDay(entries) }
+    val byTime      = remember(entries) { MoodStats.byTimeOfDay(entries) }
+    val causes      = remember(entries) { MoodStats.causeFrequencies(entries) }
+    val weatherStat = remember(entries, snapshotMap) { MoodStats.weatherAnalysis(entries, snapshotMap) }
 
     val screenGradient = Brush.verticalGradient(
         listOf(colors.primary.copy(alpha = 0.12f), colors.surface),
@@ -153,6 +158,15 @@ fun AnalysisScreen(
             Spacer(Modifier.height(16.dp))
             val catMap = categories.associateBy { it.id }
             TopCauses(causes = causes.take(5), catMap = catMap, colors = colors)
+        }
+
+        // ── Weather & mood ────────────────────────────────
+        val hasWeather = weatherStat.byCondition.isNotEmpty()
+        if (hasWeather) {
+            Spacer(Modifier.height(16.dp))
+            SectionTitle(R.string.analysis_weather_title, colors)
+            Spacer(Modifier.height(8.dp))
+            WeatherMoodSection(stat = weatherStat, colors = colors)
         }
 
         Spacer(Modifier.height(24.dp))
@@ -404,4 +418,107 @@ private fun SectionTitle(res: Int, colors: AppColors) {
         color = colors.onSurface,
         fontWeight = FontWeight.SemiBold,
     )
+}
+
+// ── Weather & mood section ────────────────────────────────
+
+@Composable
+private fun WeatherMoodSection(stat: MoodStats.WeatherAnalysis, colors: AppColors) {
+
+    fun moodStr(v: Float?) = if (v == null) "—" else if (v >= 0) "+%.1f".format(v) else "%.1f".format(v)
+    fun conditionEmoji(c: String) = when {
+        c.contains("thunder", ignoreCase = true) -> "⛈️"
+        c.contains("rain", ignoreCase = true)    -> "🌧️"
+        c.contains("drizzle", ignoreCase = true) -> "🌦️"
+        c.contains("snow", ignoreCase = true)    -> "❄️"
+        c.contains("fog", ignoreCase = true) || c.contains("mist", ignoreCase = true) -> "🌫️"
+        c.contains("cloud", ignoreCase = true)   -> "☁️"
+        c.contains("clear", ignoreCase = true) || c.contains("sunny", ignoreCase = true) -> "☀️"
+        else -> "🌤️"
+    }
+
+    Surface(
+        shape    = RoundedCornerShape(16.dp),
+        color    = colors.cardSurface,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            // Rainy vs dry comparison
+            if (stat.rainyAvg != null || stat.dryAvg != null) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    if (stat.rainyAvg != null) {
+                        StatCell(
+                            label  = stringResource(R.string.analysis_weather_rainy),
+                            value  = moodStr(stat.rainyAvg),
+                            color  = colors.primary,
+                            colors = colors,
+                        )
+                    }
+                    if (stat.rainyAvg != null && stat.dryAvg != null) {
+                        VerticalDivider(color = colors.outline, modifier = Modifier.height(48.dp))
+                    }
+                    if (stat.dryAvg != null) {
+                        StatCell(
+                            label  = stringResource(R.string.analysis_weather_dry),
+                            value  = moodStr(stat.dryAvg),
+                            color  = colors.secondary,
+                            colors = colors,
+                        )
+                    }
+                }
+                if (stat.byCondition.isNotEmpty()) {
+                    HorizontalDivider(
+                        color    = colors.outline.copy(alpha = 0.3f),
+                        modifier = Modifier.padding(vertical = 12.dp),
+                    )
+                }
+            }
+
+            // Per-condition rows
+            stat.byCondition.take(6).forEach { cond ->
+                val barFraction = ((cond.avg + 10f) / 20f).coerceIn(0f, 1f)
+                val barColor    = when {
+                    cond.avg > 2f  -> colors.secondary
+                    cond.avg < -2f -> colors.tertiary
+                    else            -> colors.primary
+                }
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "${conditionEmoji(cond.condition)} ${cond.condition}",
+                        style    = MaterialTheme.typography.bodyMedium,
+                        color    = colors.onSurface,
+                        modifier = Modifier.width(130.dp),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(colors.outline)
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(barFraction)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(barColor)
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        moodStr(cond.avg),
+                        style    = MaterialTheme.typography.labelLarge,
+                        color    = barColor,
+                        modifier = Modifier.width(36.dp),
+                        textAlign = TextAlign.End,
+                    )
+                }
+            }
+        }
+    }
 }

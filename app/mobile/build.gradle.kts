@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.oss.licenses)
 }
 
 val localPropsFile = rootProject.file("local.properties")
@@ -118,4 +119,7 @@ dependencies {
 
     // Drag-to-reorder
     implementation(libs.reorderable)
+
+    // OSS Licenses
+    implementation(libs.play.services.oss.licenses)
 }

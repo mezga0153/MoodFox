@@ -98,6 +98,17 @@ private val SCALE_EMOJIS = mapOf(
 
 private fun moodEmoji(value: Int) = SCALE_EMOJIS[value.coerceIn(-10, 10)] ?: "😐"
 
+private fun conditionEmoji(condition: String): String = when {
+    condition.contains("thunder", ignoreCase = true) -> "⛈️"
+    condition.contains("rain", ignoreCase = true)    -> "🌧️"
+    condition.contains("drizzle", ignoreCase = true) -> "🌦️"
+    condition.contains("snow", ignoreCase = true)    -> "❄️"
+    condition.contains("fog", ignoreCase = true) || condition.contains("mist", ignoreCase = true) -> "🌫️"
+    condition.contains("cloud", ignoreCase = true)   -> "☁️"
+    condition.contains("clear", ignoreCase = true) || condition.contains("sunny", ignoreCase = true) -> "☀️"
+    else -> "🌤️"
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CalendarScreen(
@@ -131,6 +142,11 @@ fun CalendarScreen(
     val allCategories by causeCategoryDao.getAll().collectAsState(initial = emptyList())
     val categoryMap: Map<Long, CauseCategory> = remember(allCategories) {
         allCategories.associateBy { it.id }
+    }
+
+    val allSnapshots by weatherSnapshotDao.getAll().collectAsState(initial = emptyList())
+    val snapshotMap: Map<Long, com.moodfox.data.local.db.WeatherSnapshot> = remember(allSnapshots) {
+        allSnapshots.associateBy { it.id }
     }
 
     // Load entries for ±1 month window so navigating stays fast
@@ -205,6 +221,7 @@ fun CalendarScreen(
             monthStats    = monthStats,
             allCategories = allCategories,
             categoryMap   = categoryMap,
+            snapshotMap   = snapshotMap,
             colors        = colors,
             onAddEntry    = { day -> selectedDay = day; showAddSheet = true },
             onDeleteEntry = { entry -> scope.launch { moodEntryDao.delete(entry) } },
@@ -239,6 +256,7 @@ private fun CalendarListView(
     monthStats: Map<LocalDate, DayStats>,
     allCategories: List<CauseCategory>,
     categoryMap: Map<Long, CauseCategory>,
+    snapshotMap: Map<Long, com.moodfox.data.local.db.WeatherSnapshot>,
     colors: AppColors,
     onAddEntry: (LocalDate) -> Unit,
     onDeleteEntry: (MoodEntry) -> Unit,
@@ -428,6 +446,23 @@ private fun CalendarListView(
                                                 )
                                             }
                                         }
+                                    }
+                                }
+                                // Weather chip
+                                val snap = entry.weatherSnapshotId?.let { snapshotMap[it] }
+                                if (snap != null) {
+                                    val condEmoji = conditionEmoji(snap.condition)
+                                    Surface(
+                                        shape    = RoundedCornerShape(20.dp),
+                                        color    = colors.outline.copy(alpha = 0.15f),
+                                        modifier = Modifier.padding(start = 52.dp, end = 12.dp, bottom = 6.dp),
+                                    ) {
+                                        Text(
+                                            text     = "$condEmoji ${snap.temperatureC.toInt()}°C · ${snap.city}",
+                                            style    = MaterialTheme.typography.labelSmall,
+                                            color    = colors.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        )
                                     }
                                 }
                                 // Note (on click of comment icon)

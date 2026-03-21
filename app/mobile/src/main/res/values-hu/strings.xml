@@ -147,4 +147,15 @@
     <!-- Settings -->
     <string name="settings_how_it_works">Hogyan működik</string>
     <string name="settings_about">Névjegy</string>
+    <string name="about_version">Verzió</string>
+    <string name="about_licenses">Nyílt forráskódú licencek</string>
+
+    <!-- Reminder time editor -->
+    <string name="settings_reminders_add_time">Idő hozzáadása</string>
+    <string name="settings_quiet_hours">Csendes órák</string>
+
+    <!-- Weather analysis -->
+    <string name="analysis_weather_title">Időjárás &amp; hangulat</string>
+    <string name="analysis_weather_rainy">🌧️ Esős napok</string>
+    <string name="analysis_weather_dry">☀️ Száraz napok</string>
 </resources>

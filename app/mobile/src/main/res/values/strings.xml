@@ -113,6 +113,8 @@
     <string name="settings_debug_logs">View debug logs</string>
     <string name="settings_how_it_works">How it works</string>
     <string name="settings_about">About</string>
+    <string name="about_version">Version</string>
+    <string name="about_licenses">Open source licenses</string>
 
     <!-- Category manager -->
     <string name="categories_title">Manage causes</string>
@@ -147,4 +149,13 @@
     <!-- Error / empty states -->
     <string name="placeholder_no_data">—</string>
     <string name="error_generic">Something went wrong.</string>
+
+    <!-- Reminder time editor -->
+    <string name="settings_reminders_add_time">Add time</string>
+    <string name="settings_quiet_hours">Quiet hours</string>
+
+    <!-- Weather analysis -->
+    <string name="analysis_weather_title">Weather &amp; mood</string>
+    <string name="analysis_weather_rainy">🌧️ Rainy days</string>
+    <string name="analysis_weather_dry">☀️ Dry days</string>
 </resources>

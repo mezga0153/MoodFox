@@ -149,4 +149,15 @@
     <!-- Settings -->
     <string name="settings_how_it_works">Kako deluje</string>
     <string name="settings_about">O aplikaciji</string>
+    <string name="about_version">Različica</string>
+    <string name="about_licenses">Odprtokodne licence</string>
+
+    <!-- Reminder time editor -->
+    <string name="settings_reminders_add_time">Dodaj uro</string>
+    <string name="settings_quiet_hours">Tihe ure</string>
+
+    <!-- Weather analysis -->
+    <string name="analysis_weather_title">Vreme &amp; razpoloženje</string>
+    <string name="analysis_weather_rainy">🌧️ Deževni dnevi</string>
+    <string name="analysis_weather_dry">☀️ Suhi dnevi</string>
 </resources>
