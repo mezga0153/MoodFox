@@ -395,10 +395,11 @@ private fun CalendarListView(
                             }
 
                             Column(modifier = Modifier.fillMaxWidth()) {
+                                val snap = entry.weatherSnapshotId?.let { snapshotMap[it] }
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 2.dp),
+                                        .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(timeStr, style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant, modifier = Modifier.width(40.dp))
@@ -410,7 +411,40 @@ private fun CalendarListView(
                                         color      = ec,
                                         fontWeight = FontWeight.Bold,
                                     )
-                                    Spacer(Modifier.weight(1f))
+                                    Spacer(Modifier.width(8.dp))
+                                    FlowRow(
+                                        modifier              = Modifier.weight(1f),
+                                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                        verticalArrangement   = Arrangement.spacedBy(3.dp),
+                                    ) {
+                                        entryCauses.forEach { cat ->
+                                            Surface(
+                                                shape  = RoundedCornerShape(20.dp),
+                                                color  = ec.copy(alpha = 0.12f),
+                                                border = BorderStroke(1.dp, ec.copy(alpha = 0.3f)),
+                                            ) {
+                                                Text(
+                                                    text     = "${cat.emoji} ${localizedCauseName(cat)}",
+                                                    style    = MaterialTheme.typography.labelSmall,
+                                                    color    = colors.onSurface,
+                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                                )
+                                            }
+                                        }
+                                        if (snap != null) {
+                                            Surface(
+                                                shape = RoundedCornerShape(20.dp),
+                                                color = colors.outline.copy(alpha = 0.15f),
+                                            ) {
+                                                Text(
+                                                    text     = "${conditionEmoji(snap.condition)} ${snap.temperatureC.toInt()}°C",
+                                                    style    = MaterialTheme.typography.labelSmall,
+                                                    color    = colors.onSurfaceVariant,
+                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                                )
+                                            }
+                                        }
+                                    }
                                     if (hasNote) {
                                         IconButton(
                                             onClick  = { expandedNotes = if (noteExpanded) expandedNotes - entry.id else expandedNotes + entry.id },
@@ -428,43 +462,6 @@ private fun CalendarListView(
                                         Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = colors.error, modifier = Modifier.size(16.dp))
                                     }
                                 }
-                                // Cause pills + weather chip together
-                                val snap = entry.weatherSnapshotId?.let { snapshotMap[it] }
-                                if (entryCauses.isNotEmpty() || snap != null) {
-                                    FlowRow(
-                                        modifier              = Modifier.padding(start = 52.dp, end = 12.dp, bottom = 6.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                        verticalArrangement   = Arrangement.spacedBy(4.dp),
-                                    ) {
-                                        entryCauses.forEach { cat ->
-                                            Surface(
-                                                shape  = RoundedCornerShape(20.dp),
-                                                color  = ec.copy(alpha = 0.12f),
-                                                border = BorderStroke(1.dp, ec.copy(alpha = 0.3f)),
-                                            ) {
-                                                Text(
-                                                    text     = "${cat.emoji} ${localizedCauseName(cat)}",
-                                                    style    = MaterialTheme.typography.labelSmall,
-                                                    color    = colors.onSurface,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                                )
-                                            }
-                                        }
-                                        if (snap != null) {
-                                            Surface(
-                                                shape = RoundedCornerShape(20.dp),
-                                                color = colors.outline.copy(alpha = 0.15f),
-                                            ) {
-                                                Text(
-                                                    text     = "${conditionEmoji(snap.condition)} ${snap.temperatureC.toInt()}°C",
-                                                    style    = MaterialTheme.typography.labelSmall,
-                                                    color    = colors.onSurfaceVariant,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
                                 // Note (on click of comment icon)
                                 if (hasNote && noteExpanded) {
                                     Text(
@@ -473,8 +470,6 @@ private fun CalendarListView(
                                         color    = colors.onSurface,
                                         modifier = Modifier.padding(start = 52.dp, end = 12.dp, bottom = 8.dp),
                                     )
-                                } else if (entryCauses.isEmpty() && !hasNote) {
-                                    Spacer(Modifier.height(4.dp))
                                 }
                             }
                         }
