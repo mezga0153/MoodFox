@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,6 +51,11 @@ import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.data.remote.WeatherService
+import com.moodfox.ui.checkin.CausesCard
+import com.moodfox.ui.checkin.NoteCard
+import com.moodfox.ui.checkin.SliderCard
+import com.moodfox.ui.checkin.foxDrawableForValue
+import com.moodfox.ui.checkin.emojiForValue
 import com.moodfox.ui.components.localizedCauseName
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
@@ -120,6 +126,7 @@ fun CalendarScreen(
     weatherSnapshotDao: WeatherSnapshotDao,
     weatherService: WeatherService,
     weatherEnabled: Boolean,
+    characterMode: String = "fox",
 ) {
     val colors = LocalAppColors.current
     val today  = LocalDate.now()
@@ -226,6 +233,7 @@ fun CalendarScreen(
             categoryMap   = categoryMap,
             snapshotMap   = snapshotMap,
             colors        = colors,
+            characterMode = characterMode,
             onAddEntry    = { day -> selectedDay = day; showAddSheet = true },
             onDeleteEntry = { entry -> scope.launch { moodEntryDao.delete(entry) } },
         )
@@ -245,6 +253,7 @@ fun CalendarScreen(
                 }
             },
             colors           = colors,
+            characterMode    = characterMode,
         )
     }
 }
@@ -261,6 +270,7 @@ private fun CalendarListView(
     categoryMap: Map<Long, CauseCategory>,
     snapshotMap: Map<Long, com.moodfox.data.local.db.WeatherSnapshot>,
     colors: AppColors,
+    characterMode: String,
     onAddEntry: (LocalDate) -> Unit,
     onDeleteEntry: (MoodEntry) -> Unit,
 ) {
@@ -361,7 +371,15 @@ private fun CalendarListView(
                                 fontWeight = FontWeight.Bold,
                             )
                             Spacer(Modifier.width(4.dp))
-                            Text(text = moodEmoji(stats.avg.toInt()), style = MaterialTheme.typography.titleSmall)
+                            if (characterMode == "fox") {
+                                Image(
+                                    painter = painterResource(foxDrawableForValue(stats!!.avg.toInt())),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(36.dp),
+                                )
+                            } else {
+                                Text(text = moodEmoji(stats!!.avg.toInt()), fontSize = 28.sp)
+                            }
                             Icon(
                                 imageVector        = if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                                 contentDescription = null,
@@ -403,7 +421,15 @@ private fun CalendarListView(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(timeStr, style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant, modifier = Modifier.width(40.dp))
-                                    Text(moodEmoji(entry.moodValue), style = MaterialTheme.typography.titleSmall)
+                                    if (characterMode == "fox") {
+                                        Image(
+                                            painter = painterResource(foxDrawableForValue(entry.moodValue)),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(48.dp),
+                                        )
+                                    } else {
+                                        Text(moodEmoji(entry.moodValue), fontSize = 36.sp)
+                                    }
                                     Spacer(Modifier.width(6.dp))
                                     Text(
                                         text       = if (entry.moodValue >= 0) "+${entry.moodValue}" else "${entry.moodValue}",
@@ -581,6 +607,7 @@ private fun AddEntrySheet(
     onDismiss: () -> Unit,
     onSave: (MoodEntry) -> Unit,
     colors: AppColors,
+    characterMode: String,
 ) {
     var moodValue      by remember { mutableIntStateOf(0) }
     var selectedCauses by remember { mutableStateOf(setOf<Long>()) }
@@ -603,15 +630,12 @@ private fun AddEntrySheet(
     val dateLabel = "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${date.year}"
     val timeLabel = "%02d:%02d".format(selectedHour, selectedMinute)
 
-    val density = LocalDensity.current
-    var trackWidthPx by remember { mutableFloatStateOf(0f) }
     val thumbColor = when {
         moodValue > 2  -> colors.secondary
         moodValue < -2 -> colors.tertiary
         else           -> colors.primary
     }
-    val trackGradient = Brush.horizontalGradient(listOf(colors.tertiary, colors.primary, colors.secondary))
-    val fraction = (moodValue + 10f) / 20f
+    val scrollState = rememberScrollState()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -621,7 +645,7 @@ private fun AddEntrySheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -654,13 +678,19 @@ private fun AddEntrySheet(
 
             Spacer(Modifier.height(16.dp))
 
-            // Emoji + score
-            val emoji = moodEmoji(moodValue)
-            val scoreLabel = if (moodValue >= 0) "+$moodValue" else "$moodValue"
-            Text(text = emoji, fontSize = 56.sp)
+            // Character + score
+            if (characterMode == "fox") {
+                Image(
+                    painter = painterResource(foxDrawableForValue(moodValue)),
+                    contentDescription = "Mood $moodValue",
+                    modifier = Modifier.size(100.dp),
+                )
+            } else {
+                Text(text = emojiForValue(moodValue), fontSize = 56.sp)
+            }
             Spacer(Modifier.height(4.dp))
             Text(
-                text       = scoreLabel,
+                text       = if (moodValue >= 0) "+$moodValue" else "$moodValue",
                 style      = MaterialTheme.typography.headlineSmall,
                 color      = thumbColor,
                 fontWeight = FontWeight.Bold,
@@ -668,173 +698,35 @@ private fun AddEntrySheet(
 
             Spacer(Modifier.height(16.dp))
 
-            // Slider
-            Surface(shape = RoundedCornerShape(20.dp), color = colors.surface, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(72.dp)
-                            .onSizeChanged { trackWidthPx = it.width.toFloat() }
-                            .pointerInput(trackWidthPx) {
-                                detectHorizontalDragGestures(
-                                    onDragStart = { offset ->
-                                        if (trackWidthPx > 0f)
-                                            moodValue = ((offset.x / trackWidthPx) * 20f - 10f).toInt().coerceIn(-10, 10)
-                                    },
-                                    onHorizontalDrag = { change, _ ->
-                                        change.consume()
-                                        if (trackWidthPx > 0f)
-                                            moodValue = ((change.position.x / trackWidthPx) * 20f - 10f).toInt().coerceIn(-10, 10)
-                                    },
-                                )
-                            }
-                            .pointerInput(trackWidthPx) {
-                                detectTapGestures { offset ->
-                                    if (trackWidthPx > 0f)
-                                        moodValue = ((offset.x / trackWidthPx) * 20f - 10f).toInt().coerceIn(-10, 10)
-                                }
-                            },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                            val trackY = size.height * 0.42f
-                            val trackH = with(density) { 10.dp.toPx() }
-                            drawRoundRect(
-                                brush        = trackGradient,
-                                topLeft      = Offset(0f, trackY - trackH / 2),
-                                size         = Size(size.width, trackH),
-                                cornerRadius = CornerRadius(trackH / 2),
-                            )
-                            val b2Start = (8f / 20f) * size.width
-                            val b2End   = (12f / 20f) * size.width
-                            drawRoundRect(
-                                color        = colors.accent.copy(alpha = 0.20f),
-                                topLeft      = Offset(b2Start, trackY - trackH / 2 - 2f),
-                                size         = Size(b2End - b2Start, trackH + 4f),
-                                cornerRadius = CornerRadius(6f),
-                            )
-                            listOf(-10, -5, 0, 5, 10).forEach { tick ->
-                                val x = ((tick + 10f) / 20f) * size.width
-                                drawLine(
-                                    color       = colors.onSurfaceVariant.copy(alpha = 0.18f),
-                                    start       = Offset(x, trackY - 10f),
-                                    end         = Offset(x, trackY + 10f),
-                                    strokeWidth = with(density) { 1.5.dp.toPx() },
-                                    cap         = StrokeCap.Round,
-                                )
-                            }
-                            val thumbX = fraction * size.width
-                            drawCircle(color = thumbColor.copy(alpha = 0.20f), radius = with(density) { 22.dp.toPx() }, center = Offset(thumbX, trackY))
-                            drawCircle(color = colors.cardSurface, radius = with(density) { 16.dp.toPx() }, center = Offset(thumbX, trackY))
-                            drawCircle(color = thumbColor, radius = with(density) { 12.dp.toPx() }, center = Offset(thumbX, trackY))
-                        }
-                        Row(
-                            modifier              = Modifier.fillMaxWidth().padding(top = 40.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            listOf(-10, -5, -2, 0, 2, 5, 10).forEach { tick ->
-                                val active = tick == moodValue
-                                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text       = if (tick > 0) "+$tick" else "$tick",
-                                        fontSize   = if (active) 13.sp else 11.sp,
-                                        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                                        color      = if (active) thumbColor else colors.onSurfaceVariant.copy(alpha = 0.55f),
-                                        textAlign  = TextAlign.Center,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            // Slider (shared with check-in)
+            SliderCard(value = moodValue, onChange = { moodValue = it }, colors = colors)
 
             Spacer(Modifier.height(16.dp))
 
-            // Causes
+            // Causes (shared with check-in)
             if (categories.isNotEmpty()) {
-                val visibleCats = if (showAllCauses) categories else categories.take(6)
-                val hiddenCount = (categories.size - 6).coerceAtLeast(0)
-                Surface(shape = RoundedCornerShape(20.dp), color = colors.surface, modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                        Text(
-                            text     = stringResource(R.string.checkin_causes_label),
-                            style    = MaterialTheme.typography.labelLarge,
-                            color    = colors.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 10.dp),
-                        )
-                        visibleCats.chunked(3).forEach { row ->
-                            Row(
-                                modifier              = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                row.forEach { cat ->
-                                    val sel = cat.id in selectedCauses
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(if (sel) colors.primaryContainer else Color.Transparent)
-                                            .border(1.dp, if (sel) colors.primary else colors.outline, RoundedCornerShape(12.dp))
-                                            .clickable {
-                                                selectedCauses = if (cat.id in selectedCauses) selectedCauses - cat.id else selectedCauses + cat.id
-                                            }
-                                            .padding(vertical = 8.dp),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(text = cat.emoji, fontSize = 20.sp)
-                                            Text(
-                                                text      = localizedCauseName(cat),
-                                                style     = MaterialTheme.typography.labelSmall,
-                                                color     = if (sel) colors.primary else colors.onSurfaceVariant,
-                                                textAlign = TextAlign.Center,
-                                                maxLines  = 1,
-                                            )
-                                        }
-                                    }
-                                }
-                                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
-                            }
-                        }
-                        if (hiddenCount > 0 || showAllCauses) {
-                            TextButton(
-                                onClick        = { showAllCauses = !showAllCauses },
-                                contentPadding = PaddingValues(0.dp),
-                                colors         = ButtonDefaults.textButtonColors(contentColor = colors.primary),
-                            ) {
-                                Text(if (showAllCauses) "Show less" else "+$hiddenCount more", style = MaterialTheme.typography.labelLarge)
-                            }
-                        }
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-            }
-
-            // Note toggle
-            TextButton(
-                onClick = { showNote = !showNote },
-                colors  = ButtonDefaults.textButtonColors(contentColor = colors.primary),
-            ) {
-                Text(if (showNote) stringResource(R.string.checkin_note_hide) else stringResource(R.string.checkin_note_add))
-            }
-            if (showNote) {
-                OutlinedTextField(
-                    value         = note,
-                    onValueChange = { if (it.length <= 300) note = it },
-                    modifier      = Modifier.fillMaxWidth(),
-                    placeholder   = { Text(stringResource(R.string.checkin_note_hint), color = colors.onSurfaceVariant) },
-                    minLines      = 3,
-                    colors        = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor   = colors.primary,
-                        unfocusedBorderColor = colors.outline,
-                        focusedTextColor     = colors.onSurface,
-                        unfocusedTextColor   = colors.onSurface,
-                    ),
+                CausesCard(
+                    categories  = categories,
+                    selected    = selectedCauses,
+                    onToggle    = { id -> selectedCauses = if (id in selectedCauses) selectedCauses - id else selectedCauses + id },
+                    showAll     = showAllCauses,
+                    onToggleAll = { showAllCauses = !showAllCauses },
+                    colors      = colors,
                 )
                 Spacer(Modifier.height(12.dp))
             }
+
+            // Note (shared with check-in)
+            NoteCard(
+                note         = note,
+                showNote     = showNote,
+                onToggle     = { showNote = !showNote },
+                onNoteChange = { if (it.length <= 300) note = it },
+                scrollState  = scrollState,
+                colors       = colors,
+            )
+
+            Spacer(Modifier.height(16.dp))
 
             // Save
             Button(

@@ -29,9 +29,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.LocaleListCompat
 import com.moodfox.BuildConfig
@@ -148,6 +150,49 @@ fun SettingsScreen(
                                 scope.launch { preferencesManager.setThemePreset(target.name) }
                             },
                     )
+                }
+            }
+        }
+
+        // ── Character ─────────────────────────────────────────
+        val characterMode by preferencesManager.characterMode.collectAsState(initial = "fox")
+        SettingsSection(stringResource(R.string.settings_helper), colors) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                listOf("fox" to stringResource(R.string.helper_fox), "emoji" to stringResource(R.string.helper_emoji)).forEach { (mode, label) ->
+                    val selected = characterMode == mode
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (selected) colors.primary.copy(alpha = 0.15f) else colors.cardSurface,
+                        border = BorderStroke(1.dp, if (selected) colors.primary else colors.outline),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { scope.launch { preferencesManager.setCharacterMode(mode) } },
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(vertical = 14.dp),
+                        ) {
+                            if (mode == "fox") {
+                                Image(
+                                    painter = painterResource(R.drawable.fox_mood_0),
+                                    contentDescription = label,
+                                    modifier = Modifier.size(48.dp),
+                                )
+                            } else {
+                                Text("🙂", fontSize = 36.sp)
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (selected) colors.primary else colors.onSurfaceVariant,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            )
+                        }
+                    }
                 }
             }
         }
