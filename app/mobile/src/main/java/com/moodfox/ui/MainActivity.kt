@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.*
 import androidx.core.os.LocaleListCompat
-import com.moodfox.data.local.AppLogger
 import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategoryDao
@@ -34,12 +33,10 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var weatherSnapshotDao: WeatherSnapshotDao
     @Inject lateinit var weatherService: WeatherService
     @Inject lateinit var reminderScheduler: ReminderScheduler
-    @Inject lateinit var appLogger: AppLogger
     @Inject lateinit var backupManager: BackupManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        appLogger.user("App opened")
 
         // On first launch language is "". Auto-pick system language (en/sl/hu) or fall back to en.
         val supportedLanguages = listOf("en", "sl", "hu")
@@ -74,7 +71,6 @@ class MainActivity : AppCompatActivity() {
                     weatherSnapshotDao = weatherSnapshotDao,
                     weatherService = weatherService,
                     reminderScheduler = reminderScheduler,
-                    appLogger = appLogger,
                     backupManager = backupManager,
                 )
             }

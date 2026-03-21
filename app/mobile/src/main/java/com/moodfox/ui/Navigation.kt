@@ -12,7 +12,6 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.moodfox.R
-import com.moodfox.data.local.AppLogger
 import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategoryDao
@@ -25,7 +24,6 @@ import com.moodfox.ui.calendar.CalendarScreen
 import com.moodfox.ui.checkin.CheckInScreen
 import com.moodfox.ui.onboarding.WelcomeScreen
 import com.moodfox.ui.settings.CategoryManagerScreen
-import com.moodfox.ui.settings.LogViewerScreen
 import com.moodfox.ui.settings.SettingsScreen
 import com.moodfox.ui.theme.LocalAppColors
 
@@ -36,7 +34,7 @@ private val bottomTabs = listOf(
     Triple("settings", Icons.Filled.Settings,     R.string.tab_settings),
 )
 
-private val hiddenBottomBarRoutes = setOf("welcome", "how_it_works", "settings/categories", "settings/log_viewer")
+private val hiddenBottomBarRoutes = setOf("welcome", "how_it_works", "settings/categories")
 
 @Composable
 fun MoodFoxNavGraph(
@@ -46,7 +44,6 @@ fun MoodFoxNavGraph(
     weatherSnapshotDao: WeatherSnapshotDao,
     weatherService: WeatherService,
     reminderScheduler: ReminderScheduler,
-    appLogger: AppLogger,
     backupManager: BackupManager,
 ) {
     val colors = LocalAppColors.current
@@ -141,7 +138,6 @@ fun MoodFoxNavGraph(
                     reminderScheduler  = reminderScheduler,
                     backupManager      = backupManager,
                     onNavigateToCategories = { navController.navigate("settings/categories") },
-                    onNavigateToLogViewer = { navController.navigate("settings/log_viewer") },
                     onNavigateToHowItWorks = { navController.navigate("how_it_works") },
                 )
             }
@@ -156,12 +152,6 @@ fun MoodFoxNavGraph(
             composable("settings/categories") {
                 CategoryManagerScreen(
                     causeCategoryDao = causeCategoryDao,
-                    onBack = { navController.popBackStack() },
-                )
-            }
-            composable("settings/log_viewer") {
-                LogViewerScreen(
-                    appLogger = appLogger,
                     onBack = { navController.popBackStack() },
                 )
             }

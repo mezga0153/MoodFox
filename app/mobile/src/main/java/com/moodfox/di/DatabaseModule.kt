@@ -2,7 +2,6 @@ package com.moodfox.di
 
 import android.content.Context
 import androidx.room.Room
-import com.moodfox.data.local.AppLogger
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodDatabase
 import com.moodfox.data.local.db.MoodEntryDao
@@ -31,8 +30,4 @@ object DatabaseModule {
     @Provides fun provideMoodEntryDao(db: MoodDatabase): MoodEntryDao = db.moodEntryDao()
     @Provides fun provideCauseCategoryDao(db: MoodDatabase): CauseCategoryDao = db.causeCategoryDao()
     @Provides fun provideWeatherSnapshotDao(db: MoodDatabase): WeatherSnapshotDao = db.weatherSnapshotDao()
-
-    @Provides
-    @Singleton
-    fun provideAppLogger(@ApplicationContext context: Context): AppLogger = AppLogger(context)
 }

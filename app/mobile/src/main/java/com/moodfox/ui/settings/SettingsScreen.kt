@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.LocaleListCompat
 import com.moodfox.R
-import com.moodfox.data.local.AppLogger
 import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategory
@@ -54,7 +53,6 @@ fun SettingsScreen(
     reminderScheduler: ReminderScheduler,
     backupManager: BackupManager,
     onNavigateToCategories: () -> Unit,
-    onNavigateToLogViewer: () -> Unit,
     onNavigateToHowItWorks: () -> Unit,
 ) {
     val colors = LocalAppColors.current
@@ -455,13 +453,6 @@ fun SettingsScreen(
                     )
                 },
             )
-            // Debug logs
-            SettingsNavRow(
-                label   = stringResource(R.string.settings_debug_logs),
-                icon    = Icons.Filled.BugReport,
-                colors  = colors,
-                onClick = onNavigateToLogViewer,
-            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -644,47 +635,6 @@ private fun AddCategoryDialog(onDismiss: () -> Unit, onConfirm: (String, String)
             TextButton(onClick = onDismiss) { Text("Cancel", color = colors.onSurfaceVariant) }
         },
     )
-}
-
-// ── Log viewer ────────────────────────────────────────────
-
-@Composable
-fun LogViewerScreen(
-    appLogger: AppLogger,
-    onBack: () -> Unit,
-) {
-    val colors  = LocalAppColors.current
-    val logText = remember { appLogger.read() }
-
-    Scaffold(
-        containerColor = colors.surface,
-        topBar = {
-            @OptIn(ExperimentalMaterial3Api::class)
-            TopAppBar(
-                title = { Text("Debug log", color = colors.onSurface) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = colors.primary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.surface),
-            )
-        },
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            Text(
-                text  = logText.ifEmpty { "No log entries." },
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onSurfaceVariant,
-            )
-        }
-    }
 }
 
 // ── Shared composables ────────────────────────────────────
