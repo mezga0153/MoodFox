@@ -51,6 +51,7 @@ fun MoodFoxNavGraph(
 
     val onboardingComplete by preferencesManager.onboardingComplete.collectAsState(initial = null)
     val weatherEnabled by preferencesManager.weatherEnabled.collectAsState(initial = false)
+    val manualCity by preferencesManager.manualCity.collectAsState(initial = null)
 
     // Wait until the flag is loaded before deciding start destination
     if (onboardingComplete == null) return
@@ -100,6 +101,7 @@ fun MoodFoxNavGraph(
                 WelcomeScreen(
                     preferencesManager = preferencesManager,
                     reminderScheduler  = reminderScheduler,
+                    weatherService     = weatherService,
                     onFinished = {
                         navController.navigate("checkin") {
                             popUpTo("welcome") { inclusive = true }
@@ -109,11 +111,12 @@ fun MoodFoxNavGraph(
             }
             composable("checkin") {
                 CheckInScreen(
-                    moodEntryDao = moodEntryDao,
-                    causeCategoryDao = causeCategoryDao,
+                    moodEntryDao       = moodEntryDao,
+                    causeCategoryDao   = causeCategoryDao,
                     weatherSnapshotDao = weatherSnapshotDao,
-                    weatherService = weatherService,
-                    weatherEnabled = weatherEnabled,
+                    weatherService     = weatherService,
+                    weatherEnabled     = weatherEnabled,
+                    manualCity         = manualCity,
                 )
             }
             composable("calendar") {
@@ -140,6 +143,7 @@ fun MoodFoxNavGraph(
                     moodEntryDao       = moodEntryDao,
                     causeCategoryDao   = causeCategoryDao,
                     weatherSnapshotDao = weatherSnapshotDao,
+                    weatherService     = weatherService,
                     onNavigateToCategories = { navController.navigate("settings/categories") },
                     onNavigateToHowItWorks = { navController.navigate("how_it_works") },
                 )
@@ -148,6 +152,7 @@ fun MoodFoxNavGraph(
                 WelcomeScreen(
                     preferencesManager = preferencesManager,
                     reminderScheduler  = reminderScheduler,
+                    weatherService     = weatherService,
                     isReview = true,
                     onFinished = { navController.popBackStack() },
                 )

@@ -42,6 +42,9 @@ import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntryDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
+import com.moodfox.data.remote.GeoCity
+import com.moodfox.data.remote.WeatherService
+import kotlinx.coroutines.delay
 import com.moodfox.data.local.seedDummyData
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -59,6 +62,7 @@ fun SettingsScreen(
     moodEntryDao: MoodEntryDao,
     causeCategoryDao: CauseCategoryDao,
     weatherSnapshotDao: WeatherSnapshotDao,
+    weatherService: WeatherService,
     onNavigateToCategories: () -> Unit,
     onNavigateToHowItWorks: () -> Unit,
 ) {
@@ -341,7 +345,64 @@ fun SettingsScreen(
                 colors  = colors,
                 onChange = { scope.launch { preferencesManager.setWeatherEnabled(it) } },
             )
-        }
+            if (weatherEnabled) {
+                Spacer(Modifier.height(12.dp))
+                val manualCity by preferencesManager.manualCity.collectAsState(initial = null)
+                var showCityDialog by remember { mutableStateOf(false) }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.cardSurface)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        if (manualCity != null) Icons.Filled.LocationCity else Icons.Filled.GpsFixed,
+                        contentDescription = null,
+                        tint = colors.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = manualCity ?: stringResource(R.string.settings_weather_using_gps),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurface,
+                        )
+                        Text(
+                            text = if (manualCity != null) stringResource(R.string.settings_weather_city_tap_change)
+                                   else stringResource(R.string.settings_weather_gps_desc),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.onSurfaceVariant.copy(alpha = 0.7f),
+                        )
+                    }
+                    if (manualCity != null) {
+                        IconButton(onClick = { scope.launch { preferencesManager.setManualCity(null) } }) {
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.settings_weather_use_gps), tint = colors.onSurfaceVariant)
+                        }
+                    }
+                    TextButton(onClick = { showCityDialog = true }) {
+                        Text(
+                            text = if (manualCity != null) stringResource(R.string.settings_weather_change)
+                                   else stringResource(R.string.settings_weather_set_city),
+                            color = colors.primary,
+                        )
+                    }
+                }
+
+                if (showCityDialog) {
+                    CitySearchDialog(
+                        weatherService = weatherService,
+                        onDismiss = { showCityDialog = false },
+                        onCitySelected = { city ->
+                            scope.launch { preferencesManager.setManualCity(city.name) }
+                            showCityDialog = false
+                        },
+                    )
+                }
+            }        }
 
         // ── Causes ────────────────────────────────────────────
         SettingsSection(stringResource(R.string.settings_categories), colors) {
@@ -794,4 +855,89 @@ private fun SettingsNavRow(
             color = colors.onSurface, modifier = Modifier.weight(1f))
         Icon(Icons.Filled.ChevronRight, null, tint = colors.onSurfaceVariant)
     }
+}
+
+@Composable
+internal fun CitySearchDialog(
+    weatherService: WeatherService,
+    onDismiss: () -> Unit,
+    onCitySelected: (GeoCity) -> Unit,
+) {
+    val colors = LocalAppColors.current
+    val scope  = rememberCoroutineScope()
+    var query     by remember { mutableStateOf("") }
+    var results   by remember { mutableStateOf<List<GeoCity>>(emptyList()) }
+    var searching by remember { mutableStateOf(false) }
+
+    LaunchedEffect(query) {
+        results = emptyList()
+        if (query.length < 2) { searching = false; return@LaunchedEffect }
+        searching = true
+        delay(400)
+        results   = weatherService.searchCities(query)
+        searching = false
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.city_search_title)) },
+        text  = {
+            Column {
+                OutlinedTextField(
+                    value         = query,
+                    onValueChange = { query = it },
+                    placeholder   = { Text(stringResource(R.string.city_search_placeholder), color = colors.onSurfaceVariant.copy(alpha = 0.5f)) },
+                    singleLine    = true,
+                    trailingIcon  = {
+                        when {
+                            searching      -> CircularProgressIndicator(modifier = Modifier.size(20.dp).padding(2.dp), strokeWidth = 2.dp, color = colors.primary)
+                            query.isNotEmpty() -> IconButton(onClick = { query = "" }) {
+                                Icon(Icons.Filled.Close, contentDescription = null, tint = colors.onSurfaceVariant)
+                            }
+                        }
+                    },
+                    colors  = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor   = colors.primary,
+                        unfocusedBorderColor = colors.outline,
+                        focusedTextColor     = colors.onSurface,
+                        unfocusedTextColor   = colors.onSurface,
+                        cursorColor          = colors.primary,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                results.forEachIndexed { index, city ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onCitySelected(city) }
+                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(city.name, style = MaterialTheme.typography.bodyMedium, color = colors.onSurface)
+                            val sub = listOf(city.admin1, city.country).filter { it.isNotBlank() }.joinToString(", ")
+                            if (sub.isNotBlank()) {
+                                Text(sub, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
+                            }
+                        }
+                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    }
+                    if (index < results.lastIndex) HorizontalDivider(color = colors.outline.copy(alpha = 0.3f))
+                }
+                if (query.length >= 2 && results.isEmpty() && !searching) {
+                    Text(
+                        text  = stringResource(R.string.city_search_empty),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_cancel), color = colors.onSurfaceVariant) } },
+        containerColor    = colors.cardSurface,
+        titleContentColor = colors.onSurface,
+        textContentColor  = colors.onSurface,
+    )
 }

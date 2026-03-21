@@ -21,8 +21,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
@@ -42,7 +44,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import com.moodfox.R
 import com.moodfox.data.local.PreferencesManager
+import com.moodfox.data.remote.WeatherService
 import com.moodfox.domain.ReminderScheduler
+import com.moodfox.ui.settings.CitySearchDialog
 import com.moodfox.ui.theme.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -53,6 +57,7 @@ private val PAGE_COUNT = 5
 fun WelcomeScreen(
     preferencesManager: PreferencesManager,
     reminderScheduler: ReminderScheduler,
+    weatherService: WeatherService,
     onFinished: () -> Unit,
     isReview: Boolean = false,
 ) {
@@ -101,7 +106,7 @@ fun WelcomeScreen(
                     0 -> OnboardingPage0(preferencesManager = preferencesManager, scope = scope)
                     1 -> OnboardingPage1()
                     2 -> OnboardingPageReminders(preferencesManager = preferencesManager, reminderScheduler = reminderScheduler, scope = scope)
-                    3 -> OnboardingPageWeather(preferencesManager = preferencesManager, scope = scope)
+                    3 -> OnboardingPageWeather(preferencesManager = preferencesManager, weatherService = weatherService, scope = scope)
                     4 -> OnboardingPage4(preferencesManager = preferencesManager)
                 }
             }
@@ -719,10 +724,21 @@ private fun OnboardingPageReminders(
 @Composable
 private fun OnboardingPageWeather(
     preferencesManager: PreferencesManager,
+    weatherService: WeatherService,
     scope: CoroutineScope,
 ) {
     val colors = LocalAppColors.current
     val weatherEnabled by preferencesManager.weatherEnabled.collectAsState(initial = false)
+    val manualCity     by preferencesManager.manualCity.collectAsState(initial = null)
+    var showCityDialog by remember { mutableStateOf(false) }
+
+    val locationPermLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        if (grants.values.any { it }) {
+            scope.launch { preferencesManager.setManualCity(null) }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -777,13 +793,87 @@ private fun OnboardingPageWeather(
             )
         }
 
+        if (weatherEnabled) {
+            Spacer(Modifier.height(16.dp))
+
+            val gpsSelected = manualCity == null
+            OnboardingLocationCard(
+                icon        = Icons.Filled.GpsFixed,
+                title       = stringResource(R.string.onboarding_weather_use_gps),
+                description = stringResource(R.string.onboarding_weather_gps_desc),
+                selected    = gpsSelected,
+                colors      = colors,
+                onClick     = {
+                    locationPermLauncher.launch(
+                        arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
+                    )
+                },
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            OnboardingLocationCard(
+                icon        = Icons.Filled.LocationCity,
+                title       = manualCity ?: stringResource(R.string.onboarding_weather_enter_city),
+                description = if (manualCity != null) stringResource(R.string.onboarding_weather_city_tap_change)
+                              else stringResource(R.string.onboarding_weather_city_desc),
+                selected    = !gpsSelected,
+                colors      = colors,
+                onClick     = { showCityDialog = true },
+            )
+        }
+
         Spacer(Modifier.height(16.dp))
         Text(
-            text = stringResource(R.string.onboarding_weather_note),
+            text = if (weatherEnabled && manualCity != null) stringResource(R.string.onboarding_weather_note_city)
+                   else stringResource(R.string.onboarding_weather_note),
             style = MaterialTheme.typography.bodySmall,
             color = colors.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+    }
+
+    if (showCityDialog) {
+        CitySearchDialog(
+            weatherService = weatherService,
+            onDismiss      = { showCityDialog = false },
+            onCitySelected = { city ->
+                scope.launch { preferencesManager.setManualCity(city.name) }
+                showCityDialog = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun OnboardingLocationCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    description: String,
+    selected: Boolean,
+    colors: AppColors,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (selected) colors.primary.copy(alpha = 0.15f) else colors.cardSurface)
+            .border(1.dp, if (selected) colors.primary else colors.outline, RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = if (selected) colors.primary else colors.onSurfaceVariant, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text  = title,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal),
+                color = colors.onSurface,
+            )
+            Text(description, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
+        }
     }
 }
 
