@@ -466,6 +466,82 @@ private fun WeatherMoodSection(stat: MoodStats.WeatherAnalysis, colors: AppColor
                         )
                     }
                 }
+                if (stat.byCondition.isNotEmpty() || stat.byScoreBucket.isNotEmpty()) {
+                    HorizontalDivider(
+                        color    = colors.outline.copy(alpha = 0.3f),
+                        modifier = Modifier.padding(vertical = 12.dp),
+                    )
+                }
+            }
+
+            // Score buckets: Good / Neutral / Poor
+            if (stat.byScoreBucket.isNotEmpty()) {
+                val bucketEmoji = mapOf("Good" to "🌤️", "Neutral" to "🌥️", "Poor" to "🌧️")
+                stat.byScoreBucket.forEach { b ->
+                    val barFraction = ((b.avgMood + 10f) / 20f).coerceIn(0f, 1f)
+                    val barColor    = when {
+                        b.avgMood > 2f  -> colors.secondary
+                        b.avgMood < -2f -> colors.tertiary
+                        else            -> colors.primary
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "${bucketEmoji[b.label] ?: ""} ${b.label} (${b.count}×)",
+                            style    = MaterialTheme.typography.bodyMedium,
+                            color    = colors.onSurface,
+                            modifier = Modifier.width(130.dp),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(colors.outline)
+                        ) {
+                            Box(
+                                Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(barFraction)
+                                    .clip(RoundedCornerShape(5.dp))
+                                    .background(barColor)
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            moodStr(b.avgMood),
+                            style     = MaterialTheme.typography.labelLarge,
+                            color     = barColor,
+                            modifier  = Modifier.width(36.dp),
+                            textAlign = TextAlign.End,
+                        )
+                    }
+                }
+
+                // Correlation line
+                val r = stat.scoreCorrelation
+                if (r != null) {
+                    Spacer(Modifier.height(10.dp))
+                    HorizontalDivider(color = colors.outline.copy(alpha = 0.3f))
+                    Spacer(Modifier.height(8.dp))
+                    val strength = when {
+                        kotlin.math.abs(r) >= 0.5f  -> "strong"
+                        kotlin.math.abs(r) >= 0.25f -> "moderate"
+                        else                         -> "weak"
+                    }
+                    val dir = if (r >= 0) "positive" else "negative"
+                    val rStr = if (r >= 0) "+%.2f".format(r) else "%.2f".format(r)
+                    Text(
+                        "Weather score shows $strength $dir correlation with mood (r = $rStr).",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant,
+                    )
+                }
+
                 if (stat.byCondition.isNotEmpty()) {
                     HorizontalDivider(
                         color    = colors.outline.copy(alpha = 0.3f),

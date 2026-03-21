@@ -133,10 +133,14 @@ object MoodStats {
 
     data class ConditionMood(val condition: String, val avg: Float, val count: Int)
 
+    data class WeatherScoreBucket(val label: String, val avgMood: Float, val count: Int)
+
     data class WeatherAnalysis(
         val rainyAvg: Float?,
         val dryAvg: Float?,
         val byCondition: List<ConditionMood>,
+        val scoreCorrelation: Float?,            // Pearson r between weather score and mood
+        val byScoreBucket: List<WeatherScoreBucket>,  // Good / Neutral / Poor buckets
     )
 
     fun weatherAnalysis(
@@ -161,14 +165,50 @@ object MoodStats {
             }
             .sortedByDescending { it.count }
 
+        // Score-based correlation
+        val scoredPairs = withSnap.map { (e, s) ->
+            WeatherScorer.score(s).toFloat() to e.moodValue.toFloat()
+        }
+        val correlation = pearsonR(scoredPairs.map { it.first }, scoredPairs.map { it.second })
+
+        val bucketOrder = listOf("Good", "Neutral", "Poor")
+        val byBucket = scoredPairs
+            .groupBy { (score, _) ->
+                when {
+                    score >= 3f  -> "Good"
+                    score >= -2f -> "Neutral"
+                    else         -> "Poor"
+                }
+            }
+            .map { (label, pairs) ->
+                WeatherScoreBucket(
+                    label   = label,
+                    avgMood = pairs.map { it.second }.average().toFloat(),
+                    count   = pairs.size,
+                )
+            }
+            .sortedBy { bucketOrder.indexOf(it.label) }
+
         return WeatherAnalysis(
-            rainyAvg     = if (rainyMoods.isEmpty()) null else rainyMoods.average().toFloat(),
-            dryAvg       = if (dryMoods.isEmpty()) null else dryMoods.average().toFloat(),
-            byCondition  = grouped,
+            rainyAvg         = if (rainyMoods.isEmpty()) null else rainyMoods.average().toFloat(),
+            dryAvg           = if (dryMoods.isEmpty()) null else dryMoods.average().toFloat(),
+            byCondition      = grouped,
+            scoreCorrelation = correlation,
+            byScoreBucket    = byBucket,
         )
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private fun pearsonR(xs: List<Float>, ys: List<Float>): Float? {
+        if (xs.size < 5) return null
+        val mx = xs.average().toFloat()
+        val my = ys.average().toFloat()
+        val num = xs.zip(ys).sumOf { (x, y) -> ((x - mx) * (y - my)).toDouble() }.toFloat()
+        val dx  = sqrt(xs.sumOf { ((it - mx) * (it - mx)).toDouble() }.toFloat())
+        val dy  = sqrt(ys.sumOf { ((it - my) * (it - my)).toDouble() }.toFloat())
+        return if (dx == 0f || dy == 0f) null else (num / (dx * dy)).coerceIn(-1f, 1f)
+    }
 
     private fun Long.toLocalDate(): LocalDate =
         Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()
