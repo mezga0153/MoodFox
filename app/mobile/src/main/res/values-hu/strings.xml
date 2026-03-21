@@ -81,8 +81,7 @@
     <string name="reminder_body">Jegyezd fel a hangulatodat.</string>
 
     <!-- Backup -->
-    <string name="backup_export_csv">Exportálás CSV-ként</string>
-    <string name="backup_export_json">Exportálás JSON-ként</string>
+    <string name="backup_export_xlsx">Exportálás Excelbe</string>
     <string name="backup_done">Exportálás kész</string>
     <string name="backup_error">Az exportálás sikertelen</string>
 

@@ -122,4 +122,7 @@ dependencies {
 
     // OSS Licenses
     implementation(libs.play.services.oss.licenses)
+
+    // Excel export
+    implementation(libs.fastexcel)
 }

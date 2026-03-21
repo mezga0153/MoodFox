@@ -81,8 +81,7 @@
     <string name="reminder_body">Zabeleži svoje razpoloženje.</string>
 
     <!-- Backup -->
-    <string name="backup_export_csv">Izvozi kot CSV</string>
-    <string name="backup_export_json">Izvozi kot JSON</string>
+    <string name="backup_export_xlsx">Izvozi kot Excel</string>
     <string name="backup_done">Izvoz zaključen</string>
     <string name="backup_error">Izvoz ni uspel</string>
 

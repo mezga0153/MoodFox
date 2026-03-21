@@ -13,10 +13,11 @@ import com.moodfox.data.local.db.WeatherSnapshotDao
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.moodfox.domain.WeatherScorer
+import org.dhatim.fastexcel.Workbook
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.io.PrintWriter
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -33,51 +34,40 @@ class BackupManager @Inject constructor(
     private val causeCategoryDao: CauseCategoryDao,
     private val weatherSnapshotDao: WeatherSnapshotDao,
 ) {
-    private val fmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault())
-
-    suspend fun exportCsv(): Intent = withContext(Dispatchers.IO) {
+    private val fmt    = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault())
+    suspend fun exportXlsx(): Intent = withContext(Dispatchers.IO) {
         val entries    = moodEntryDao.getAllList()
         val categories = causeCategoryDao.getAllList().associateBy { it.id }
         val snapshots  = weatherSnapshotDao.getAllList().associateBy { it.id }
 
-        val file = File(context.cacheDir, "moodfox_export.csv")
-        PrintWriter(file).use { pw ->
-            pw.println("id,datetime,moodValue,causes,note,weatherCondition,temperatureC")
-            entries.forEach { e ->
-                val dt = fmt.format(Instant.ofEpochMilli(e.timestamp))
-                val causeNames = try {
-                    val arr = JSONArray(e.causeIds)
-                    (0 until arr.length())
-                        .mapNotNull { categories[arr.getLong(it)]?.let { c -> "${c.emoji} ${c.name}" } }
-                        .joinToString("; ")
-                } catch (_: Exception) { "" }
-                val snap    = e.weatherSnapshotId?.let { snapshots[it] }
-                val cond    = snap?.condition?.replace("\"", "\"\"") ?: ""
-                val tempC   = snap?.temperatureC?.toInt()?.toString() ?: ""
-                val note    = e.note?.replace("\"", "\"\"") ?: ""
-                pw.println("${e.id},\"$dt\",${e.moodValue},\"$causeNames\",\"$note\",\"$cond\",$tempC")
+        val file = File(context.cacheDir, "moodfox_export.xlsx")
+        file.outputStream().buffered().use { out ->
+            Workbook(out, "MoodFox", "1.0").use { wb ->
+                val ws = wb.newWorksheet("Mood Entries")
+                listOf("ID", "Date", "Time", "Mood", "Causes", "Note", "Weather", "Temp (\u00b0C)", "Weather Score")
+                    .forEachIndexed { col, name -> ws.value(0, col, name) }
+                entries.forEachIndexed { i, e ->
+                    val row = i + 1
+                    val zdt = Instant.ofEpochMilli(e.timestamp).atZone(ZoneId.systemDefault())
+                    val causeNames = try {
+                        val arr = JSONArray(e.causeIds)
+                        (0 until arr.length()).mapNotNull { categories[arr.getLong(it)]?.name }.joinToString("; ")
+                    } catch (_: Exception) { "" }
+                    val snap = e.weatherSnapshotId?.let { snapshots[it] }
+                    ws.value(row, 0, e.id.toDouble())
+                    ws.value(row, 1, zdt.toLocalDate())
+                    ws.style(row, 1).format("yyyy-mm-dd").set()
+                    ws.value(row, 2, zdt.toLocalTime().toString().take(5))
+                    ws.value(row, 3, e.moodValue.toDouble())
+                    ws.value(row, 4, causeNames)
+                    ws.value(row, 5, e.note ?: "")
+                    ws.value(row, 6, snap?.condition ?: "")
+                    if (snap != null) ws.value(row, 7, snap.temperatureC.toInt().toDouble())
+                    if (snap != null) ws.value(row, 8, WeatherScorer.score(snap).toDouble())
+                }
             }
         }
-        shareIntent(file, "text/csv")
-    }
-
-    suspend fun exportJson(): Intent = withContext(Dispatchers.IO) {
-        val entries = moodEntryDao.getAllList()
-        val arr = JSONArray()
-        entries.forEach { e ->
-            arr.put(JSONObject().apply {
-                put("id",               e.id)
-                put("timestamp",        e.timestamp)
-                put("datetime",         fmt.format(Instant.ofEpochMilli(e.timestamp)))
-                put("moodValue",        e.moodValue)
-                put("causeIds",         JSONArray(e.causeIds))
-                put("note",             e.note ?: JSONObject.NULL)
-                put("weatherSnapshotId", e.weatherSnapshotId ?: JSONObject.NULL)
-            })
-        }
-        val file = File(context.cacheDir, "moodfox_export.json")
-        file.writeText(arr.toString(2))
-        shareIntent(file, "application/json")
+        shareIntent(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     }
 
     suspend fun backupZip(): Intent = withContext(Dispatchers.IO) {

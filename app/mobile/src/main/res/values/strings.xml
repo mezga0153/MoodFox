@@ -81,8 +81,7 @@
     <string name="reminder_body">Take a moment to log your mood.</string>
 
     <!-- Backup -->
-    <string name="backup_export_csv">Export as CSV</string>
-    <string name="backup_export_json">Export as JSON</string>
+    <string name="backup_export_xlsx">Export as Excel</string>
     <string name="backup_done">Export complete</string>
     <string name="backup_error">Export failed</string>
 

@@ -351,22 +351,12 @@ fun SettingsScreen(
         // ── Backup ────────────────────────────────────────────
         SettingsSection(stringResource(R.string.settings_backup), colors) {
             SettingsNavRow(
-                label   = stringResource(R.string.backup_export_csv),
+                label   = stringResource(R.string.backup_export_xlsx),
                 icon    = Icons.Filled.FileDownload,
                 colors  = colors,
                 onClick = {
                     scope.launch {
-                        context.startActivity(Intent.createChooser(backupManager.exportCsv(), null))
-                    }
-                },
-            )
-            SettingsNavRow(
-                label   = stringResource(R.string.backup_export_json),
-                icon    = Icons.Filled.FileDownload,
-                colors  = colors,
-                onClick = {
-                    scope.launch {
-                        context.startActivity(Intent.createChooser(backupManager.exportJson(), null))
+                        context.startActivity(Intent.createChooser(backupManager.exportXlsx(), null))
                     }
                 },
             )
