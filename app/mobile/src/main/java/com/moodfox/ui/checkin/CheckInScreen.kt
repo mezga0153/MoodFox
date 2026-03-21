@@ -204,8 +204,7 @@ fun CheckInScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(screenGradient)
-            .imePadding(),
+            .background(screenGradient),
     ) {
         // ── Scrollable content ────────────────────────────
         Column(
@@ -316,6 +315,7 @@ fun CheckInScreen(
                         listOf(Color.Transparent, colors.surface, colors.surface),
                     )
                 )
+                .imePadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp),
         ) {
             AnimatedContent(
