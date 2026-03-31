@@ -41,3 +41,16 @@ app/build/
 app/.gradle/
 *.apk
 *.aab
+
+# Node
+node_modules/
+package-lock.json
+
+# Character generation — neutral source images (input to generate-character.js)
+/cat.png
+/dog.png
+/elephant.png
+/fox.png
+/frog.png
+/panda.png
+/penguin.png

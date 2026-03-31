@@ -113,6 +113,109 @@ internal fun foxDrawableForValue(value: Int): Int {
     }
 }
 
+internal fun characterDrawableForValue(mode: String, value: Int): Int {
+    val v = value.coerceIn(-10, 10)
+    return when (mode) {
+        "cat" -> when (v) {
+            -10 -> R.drawable.cat_mood_neg10
+            -9  -> R.drawable.cat_mood_neg9
+            -8  -> R.drawable.cat_mood_neg8
+            -7  -> R.drawable.cat_mood_neg7
+            -6  -> R.drawable.cat_mood_neg6
+            -5  -> R.drawable.cat_mood_neg5
+            -4  -> R.drawable.cat_mood_neg4
+            -3  -> R.drawable.cat_mood_neg3
+            -2  -> R.drawable.cat_mood_neg2
+            -1  -> R.drawable.cat_mood_neg1
+            0   -> R.drawable.cat_mood_0
+            1   -> R.drawable.cat_mood_1
+            2   -> R.drawable.cat_mood_2
+            3   -> R.drawable.cat_mood_3
+            4   -> R.drawable.cat_mood_4
+            5   -> R.drawable.cat_mood_5
+            6   -> R.drawable.cat_mood_6
+            7   -> R.drawable.cat_mood_7
+            8   -> R.drawable.cat_mood_8
+            9   -> R.drawable.cat_mood_9
+            10  -> R.drawable.cat_mood_10
+            else -> R.drawable.cat_mood_0
+        }
+        "dog" -> when (v) {
+            -10 -> R.drawable.dog_mood_neg10
+            -9  -> R.drawable.dog_mood_neg9
+            -8  -> R.drawable.dog_mood_neg8
+            -7  -> R.drawable.dog_mood_neg7
+            -6  -> R.drawable.dog_mood_neg6
+            -5  -> R.drawable.dog_mood_neg5
+            -4  -> R.drawable.dog_mood_neg4
+            -3  -> R.drawable.dog_mood_neg3
+            -2  -> R.drawable.dog_mood_neg2
+            -1  -> R.drawable.dog_mood_neg1
+            0   -> R.drawable.dog_mood_0
+            1   -> R.drawable.dog_mood_1
+            2   -> R.drawable.dog_mood_2
+            3   -> R.drawable.dog_mood_3
+            4   -> R.drawable.dog_mood_4
+            5   -> R.drawable.dog_mood_5
+            6   -> R.drawable.dog_mood_6
+            7   -> R.drawable.dog_mood_7
+            8   -> R.drawable.dog_mood_8
+            9   -> R.drawable.dog_mood_9
+            10  -> R.drawable.dog_mood_10
+            else -> R.drawable.dog_mood_0
+        }
+        "frog" -> when (v) {
+            -10 -> R.drawable.frog_mood_neg10
+            -9  -> R.drawable.frog_mood_neg9
+            -8  -> R.drawable.frog_mood_neg8
+            -7  -> R.drawable.frog_mood_neg7
+            -6  -> R.drawable.frog_mood_neg6
+            -5  -> R.drawable.frog_mood_neg5
+            -4  -> R.drawable.frog_mood_neg4
+            -3  -> R.drawable.frog_mood_neg3
+            -2  -> R.drawable.frog_mood_neg2
+            -1  -> R.drawable.frog_mood_neg1
+            0   -> R.drawable.frog_mood_0
+            1   -> R.drawable.frog_mood_1
+            2   -> R.drawable.frog_mood_2
+            3   -> R.drawable.frog_mood_3
+            4   -> R.drawable.frog_mood_4
+            5   -> R.drawable.frog_mood_5
+            6   -> R.drawable.frog_mood_6
+            7   -> R.drawable.frog_mood_7
+            8   -> R.drawable.frog_mood_8
+            9   -> R.drawable.frog_mood_9
+            10  -> R.drawable.frog_mood_10
+            else -> R.drawable.frog_mood_0
+        }
+        "panda" -> when (v) {
+            -10 -> R.drawable.panda_mood_neg10
+            -9  -> R.drawable.panda_mood_neg9
+            -8  -> R.drawable.panda_mood_neg8
+            -7  -> R.drawable.panda_mood_neg7
+            -6  -> R.drawable.panda_mood_neg6
+            -5  -> R.drawable.panda_mood_neg5
+            -4  -> R.drawable.panda_mood_neg4
+            -3  -> R.drawable.panda_mood_neg3
+            -2  -> R.drawable.panda_mood_neg2
+            -1  -> R.drawable.panda_mood_neg1
+            0   -> R.drawable.panda_mood_0
+            1   -> R.drawable.panda_mood_1
+            2   -> R.drawable.panda_mood_2
+            3   -> R.drawable.panda_mood_3
+            4   -> R.drawable.panda_mood_4
+            5   -> R.drawable.panda_mood_5
+            6   -> R.drawable.panda_mood_6
+            7   -> R.drawable.panda_mood_7
+            8   -> R.drawable.panda_mood_8
+            9   -> R.drawable.panda_mood_9
+            10  -> R.drawable.panda_mood_10
+            else -> R.drawable.panda_mood_0
+        }
+        else -> foxDrawableForValue(v) // "fox" and any unknown mode
+    }
+}
+
 // ── Mood color ────────────────────────────────────────────
 @Composable
 private fun moodColor(value: Int, colors: AppColors): Color = when {
@@ -419,9 +522,9 @@ private fun MoodHero(moodValue: Int, displayColor: Color, colors: AppColors, cha
             color = colors.onSurfaceVariant,
         )
         Spacer(Modifier.height(14.dp))
-        if (characterMode == "fox") {
+        if (characterMode != "emoji") {
             Image(
-                painter = painterResource(foxDrawableForValue(moodValue)),
+                painter = painterResource(characterDrawableForValue(characterMode, moodValue)),
                 contentDescription = "Mood $moodValue",
                 modifier = Modifier.size(120.dp),
             )

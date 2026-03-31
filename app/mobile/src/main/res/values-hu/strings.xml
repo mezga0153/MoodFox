@@ -160,6 +160,8 @@
     <string name="helper_fox">Róka</string>
     <string name="helper_emoji">Emojik</string>
     <string name="helper_cat">Macska</string>
+    <string name="helper_dog">Kutya</string>
+    <string name="helper_frog">Béka</string>
     <string name="helper_bunny">Nyuszi</string>
     <string name="helper_panda">Panda</string>
 

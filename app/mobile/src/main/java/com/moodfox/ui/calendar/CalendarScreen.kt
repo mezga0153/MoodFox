@@ -54,6 +54,7 @@ import com.moodfox.data.remote.WeatherService
 import com.moodfox.ui.checkin.CausesCard
 import com.moodfox.ui.checkin.NoteCard
 import com.moodfox.ui.checkin.SliderCard
+import com.moodfox.ui.checkin.characterDrawableForValue
 import com.moodfox.ui.checkin.foxDrawableForValue
 import com.moodfox.ui.checkin.emojiForValue
 import com.moodfox.ui.components.localizedCauseName
@@ -371,9 +372,9 @@ private fun CalendarListView(
                                 fontWeight = FontWeight.Bold,
                             )
                             Spacer(Modifier.width(4.dp))
-                            if (characterMode == "fox") {
+                            if (characterMode != "emoji") {
                                 Image(
-                                    painter = painterResource(foxDrawableForValue(stats!!.avg.toInt())),
+                                    painter = painterResource(characterDrawableForValue(characterMode, stats!!.avg.toInt())),
                                     contentDescription = null,
                                     modifier = Modifier.size(36.dp),
                                 )
@@ -421,9 +422,9 @@ private fun CalendarListView(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(timeStr, style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant, modifier = Modifier.width(40.dp))
-                                    if (characterMode == "fox") {
+                                    if (characterMode != "emoji") {
                                         Image(
-                                            painter = painterResource(foxDrawableForValue(entry.moodValue)),
+                                            painter = painterResource(characterDrawableForValue(characterMode, entry.moodValue)),
                                             contentDescription = null,
                                             modifier = Modifier.size(48.dp),
                                         )
@@ -679,9 +680,9 @@ private fun AddEntrySheet(
             Spacer(Modifier.height(16.dp))
 
             // Character + score
-            if (characterMode == "fox") {
+            if (characterMode != "emoji") {
                 Image(
-                    painter = painterResource(foxDrawableForValue(moodValue)),
+                    painter = painterResource(characterDrawableForValue(characterMode, moodValue)),
                     contentDescription = "Mood $moodValue",
                     modifier = Modifier.size(100.dp),
                 )

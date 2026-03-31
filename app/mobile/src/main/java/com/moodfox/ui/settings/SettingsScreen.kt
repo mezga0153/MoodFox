@@ -157,27 +157,43 @@ fun SettingsScreen(
         // ── Character ─────────────────────────────────────────
         val characterMode by preferencesManager.characterMode.collectAsState(initial = "fox")
         SettingsSection(stringResource(R.string.settings_helper), colors) {
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                listOf("fox" to stringResource(R.string.helper_fox), "emoji" to stringResource(R.string.helper_emoji)).forEach { (mode, label) ->
+                listOf(
+                    "fox"   to stringResource(R.string.helper_fox),
+                    "cat"   to stringResource(R.string.helper_cat),
+                    "dog"   to stringResource(R.string.helper_dog),
+                    "frog"  to stringResource(R.string.helper_frog),
+                    "panda" to stringResource(R.string.helper_panda),
+                    "emoji" to stringResource(R.string.helper_emoji),
+                ).forEach { (mode, label) ->
                     val selected = characterMode == mode
+                    val neutralDrawable = when (mode) {
+                        "fox"   -> R.drawable.fox_mood_0
+                        "cat"   -> R.drawable.cat_mood_0
+                        "dog"   -> R.drawable.dog_mood_0
+                        "frog"  -> R.drawable.frog_mood_0
+                        "panda" -> R.drawable.panda_mood_0
+                        else    -> null
+                    }
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (selected) colors.primary.copy(alpha = 0.15f) else colors.cardSurface,
                         border = BorderStroke(1.dp, if (selected) colors.primary else colors.outline),
                         modifier = Modifier
-                            .weight(1f)
+                            .width(100.dp)
                             .clickable { scope.launch { preferencesManager.setCharacterMode(mode) } },
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.padding(vertical = 14.dp),
                         ) {
-                            if (mode == "fox") {
+                            if (neutralDrawable != null) {
                                 Image(
-                                    painter = painterResource(R.drawable.fox_mood_0),
+                                    painter = painterResource(neutralDrawable),
                                     contentDescription = label,
                                     modifier = Modifier.size(48.dp),
                                 )

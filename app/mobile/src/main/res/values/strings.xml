@@ -166,6 +166,8 @@
     <string name="helper_fox">Fox</string>
     <string name="helper_emoji">Emojis</string>
     <string name="helper_cat">Cat</string>
+    <string name="helper_dog">Dog</string>
+    <string name="helper_frog">Frog</string>
     <string name="helper_bunny">Bunny</string>
     <string name="helper_panda">Panda</string>
 
