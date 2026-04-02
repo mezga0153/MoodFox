@@ -33,11 +33,11 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                 val snap    = MoonPhaseCalculator.compute(ts)
                 db.execSQL(
                     "INSERT INTO `moon_phase_snapshots` (`timestamp`, `phase`, `illumination`, `age`) VALUES (?, ?, ?, ?)",
-                    arrayOf(snap.timestamp, snap.phase, snap.illumination, snap.age),
+                    arrayOf<Any>(snap.timestamp, snap.phase, snap.illumination, snap.age),
                 )
                 db.execSQL(
                     "UPDATE `mood_entries` SET `moonPhaseSnapshotId` = last_insert_rowid() WHERE `id` = ?",
-                    arrayOf(entryId),
+                    arrayOf<Any>(entryId),
                 )
             }
         } finally {

@@ -6,9 +6,9 @@ import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MIGRATION_1_2
 import com.moodfox.data.local.db.MIGRATION_2_3
 import com.moodfox.data.local.db.MoodDatabase
-import com.moodfox.data.local.db.MoodEntryDaoimport com.moodfox.data.local.db.MoonPhaseSnapshotDaoimport com.moodfox.data.local.db.MoonPhaseSnapshotDao
+import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshotDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
-import com.moodfox.data.local.db.MIGRATION_1_2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,18 +27,13 @@ object DatabaseModule {
             context,
             MoodDatabase::class.java,
             "moodfox.db"
-<<<<<<< HEAD
         )
             .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
-=======
-        ).addMigrations(MIGRATION_1_2).build()
->>>>>>> origin/main
     }
 
     @Provides fun provideMoodEntryDao(db: MoodDatabase): MoodEntryDao = db.moodEntryDao()
     @Provides fun provideCauseCategoryDao(db: MoodDatabase): CauseCategoryDao = db.causeCategoryDao()
     @Provides fun provideWeatherSnapshotDao(db: MoodDatabase): WeatherSnapshotDao = db.weatherSnapshotDao()
-    @Provides fun provideMoonPhaseSnapshotDao(db: MoodDatabase): MoonPhaseSnapshotDao = db.moonPhaseSnapshotDao()
     @Provides fun provideMoonPhaseSnapshotDao(db: MoodDatabase): MoonPhaseSnapshotDao = db.moonPhaseSnapshotDao()
 }
