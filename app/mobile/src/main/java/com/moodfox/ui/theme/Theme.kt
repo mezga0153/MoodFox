@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.sp
 enum class ThemeMode { DARK, LIGHT }
 
 // ── Color presets ─────────────────────────────────────────
-enum class ThemePreset(val label: String, val accentHue: Float, val mode: ThemeMode) {
+enum class ThemePreset(val label: String, val accentHue: Float, val mode: ThemeMode, val satScale: Float = 1.0f) {
     PURPLE_DARK("Purple Dark",   250f, ThemeMode.DARK),
     PURPLE_LIGHT("Purple Light", 250f, ThemeMode.LIGHT),
     BLUE_DARK("Blue Dark",       220f, ThemeMode.DARK),
@@ -25,6 +25,17 @@ enum class ThemePreset(val label: String, val accentHue: Float, val mode: ThemeM
     PINK_LIGHT("Pink Light",     330f, ThemeMode.LIGHT),
     ORANGE_DARK("Orange Dark",    25f, ThemeMode.DARK),
     ORANGE_LIGHT("Orange Light",  25f, ThemeMode.LIGHT),
+    // Bold / masculine presets
+    SLATE_DARK("Slate Dark",      210f, ThemeMode.DARK,  0.36f),
+    SLATE_LIGHT("Slate Light",    210f, ThemeMode.LIGHT, 0.36f),
+    FOREST_DARK("Forest Dark",    145f, ThemeMode.DARK,  0.55f),
+    FOREST_LIGHT("Forest Light",  145f, ThemeMode.LIGHT, 0.55f),
+    CHARCOAL_DARK("Charcoal Dark",  0f, ThemeMode.DARK,  0.20f),
+    CHARCOAL_LIGHT("Charcoal Light",0f, ThemeMode.LIGHT, 0.20f),
+    CRIMSON_DARK("Crimson Dark",  355f, ThemeMode.DARK,  0.75f),
+    CRIMSON_LIGHT("Crimson Light",355f, ThemeMode.LIGHT, 0.75f),
+    MIDNIGHT_DARK("Midnight Dark",235f, ThemeMode.DARK,  0.45f),
+    MIDNIGHT_LIGHT("Midnight Light",235f, ThemeMode.LIGHT,0.45f),
 }
 
 /**
@@ -51,34 +62,34 @@ data class AppColors(
 val LocalAppColors = staticCompositionLocalOf { buildDarkColors(250f) }
 
 // ── Generator ─────────────────────────────────────────────
-fun buildAppColors(accentHue: Float, mode: ThemeMode): AppColors =
-    if (mode == ThemeMode.DARK) buildDarkColors(accentHue) else buildLightColors(accentHue)
+fun buildAppColors(accentHue: Float, mode: ThemeMode, satScale: Float = 1.0f): AppColors =
+    if (mode == ThemeMode.DARK) buildDarkColors(accentHue, satScale) else buildLightColors(accentHue, satScale)
 
-fun buildDarkColors(hue: Float): AppColors {
-    val primary = Color.hsl(hue, 0.70f, 0.71f)
-    val accent   = Color.hsl((hue + 60f) % 360f, 0.55f, 0.81f)
-    val tertiary = Color.hsl((hue + 140f) % 360f, 0.85f, 0.71f)
+fun buildDarkColors(hue: Float, satScale: Float = 1.0f): AppColors {
+    val primary = Color.hsl(hue, 0.70f * satScale, 0.71f)
+    val accent   = Color.hsl((hue + 60f) % 360f, 0.55f * satScale, 0.81f)
+    val tertiary = Color.hsl((hue + 140f) % 360f, 0.85f * satScale, 0.71f)
     return AppColors(
-        surface          = Color.hsl(hue, 0.15f, 0.05f),
-        surfaceVariant   = Color.hsl(hue, 0.20f, 0.08f),
-        cardSurface      = Color.hsl(hue, 0.22f, 0.14f),
+        surface          = Color.hsl(hue, 0.15f * satScale, 0.05f),
+        surfaceVariant   = Color.hsl(hue, 0.20f * satScale, 0.08f),
+        cardSurface      = Color.hsl(hue, 0.22f * satScale, 0.14f),
         onSurface        = Color(0xFFECECF4),
         onSurfaceVariant = Color(0xFF8B8BA3),
         primary          = primary,
-        primaryContainer = Color.hsl(hue, 0.40f, 0.20f),
+        primaryContainer = Color.hsl(hue, 0.40f * satScale, 0.20f),
         secondary        = Color(0xFF59D8A0),
         tertiary         = tertiary,
         accent           = accent,
         error            = Color(0xFFFF6B6B),
-        outline          = Color.hsl(hue, 0.15f, 0.16f),
+        outline          = Color.hsl(hue, 0.15f * satScale, 0.16f),
         isDark           = true,
     )
 }
 
-fun buildLightColors(hue: Float): AppColors {
-    val primary  = Color.hsl(hue, 0.65f, 0.45f)
-    val accent   = Color.hsl((hue + 60f) % 360f, 0.50f, 0.55f)
-    val tertiary = Color.hsl((hue + 140f) % 360f, 0.70f, 0.45f)
+fun buildLightColors(hue: Float, satScale: Float = 1.0f): AppColors {
+    val primary  = Color.hsl(hue, 0.65f * satScale, 0.45f)
+    val accent   = Color.hsl((hue + 60f) % 360f, 0.50f * satScale, 0.55f)
+    val tertiary = Color.hsl((hue + 140f) % 360f, 0.70f * satScale, 0.45f)
     return AppColors(
         surface          = Color(0xFFF5F5FA),
         surfaceVariant   = Color(0xFFEEEEF5),
@@ -86,7 +97,7 @@ fun buildLightColors(hue: Float): AppColors {
         onSurface        = Color(0xFF1A1A2E),
         onSurfaceVariant = Color(0xFF6B6B80),
         primary          = primary,
-        primaryContainer = Color.hsl(hue, 0.30f, 0.88f),
+        primaryContainer = Color.hsl(hue, 0.30f * satScale, 0.88f),
         secondary        = Color(0xFF2E9E6E),
         tertiary         = tertiary,
         accent           = accent,

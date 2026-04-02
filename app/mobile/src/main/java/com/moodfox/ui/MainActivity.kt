@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val themePresetName by preferencesManager.themePreset.collectAsState(initial = "PURPLE_DARK")
             val preset = try { ThemePreset.valueOf(themePresetName) } catch (_: Exception) { ThemePreset.PURPLE_DARK }
-            val appColors = remember(preset) { buildAppColors(preset.accentHue, preset.mode) }
+            val appColors = remember(preset) { buildAppColors(preset.accentHue, preset.mode, preset.satScale) }
 
             LaunchedEffect(appColors.isDark) {
                 enableEdgeToEdge(
