@@ -551,7 +551,7 @@ private fun OnboardingPage4(preferencesManager: PreferencesManager) {
 
         Spacer(Modifier.height(24.dp))
 
-        // Helper character row
+        // Helper character picker (same as settings)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = stringResource(R.string.settings_helper),
@@ -560,44 +560,11 @@ private fun OnboardingPage4(preferencesManager: PreferencesManager) {
             )
         }
         Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            listOf("fox" to stringResource(R.string.helper_fox), "emoji" to stringResource(R.string.helper_emoji)).forEach { (mode, label) ->
-                val selected = characterMode == mode
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (selected) colors.primary.copy(alpha = 0.15f) else colors.cardSurface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) colors.primary else colors.outline),
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { scope.launch { preferencesManager.setCharacterMode(mode) } },
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(vertical = 14.dp),
-                    ) {
-                        if (mode == "fox") {
-                            Image(
-                                painter = painterResource(R.drawable.fox_mood_0),
-                                contentDescription = label,
-                                modifier = Modifier.size(48.dp),
-                            )
-                        } else {
-                            Text("🙂", fontSize = 36.sp)
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (selected) colors.primary else colors.onSurfaceVariant,
-                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        )
-                    }
-                }
-            }
-        }
+        com.moodfox.ui.components.CharacterPicker(
+            selected = characterMode,
+            onSelect = { scope.launch { preferencesManager.setCharacterMode(it) } },
+            colors = colors,
+        )
     }
 }
 
