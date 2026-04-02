@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.moodfox.domain.MoonPhaseCalculator
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -17,6 +18,29 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             )
         """.trimIndent())
         db.execSQL("ALTER TABLE `mood_entries` ADD COLUMN `moonPhaseSnapshotId` INTEGER DEFAULT NULL")
+
+        // Backfill: retroactively compute and link a moon phase snapshot for every
+        // existing mood_entry so that pre-upgrade entries appear in analysis screens.
+        val cursor = db.query("SELECT `id`, `timestamp` FROM `mood_entries`")
+        try {
+            val colId = cursor.getColumnIndexOrThrow("id")
+            val colTs = cursor.getColumnIndexOrThrow("timestamp")
+            while (cursor.moveToNext()) {
+                val entryId = cursor.getLong(colId)
+                val ts      = cursor.getLong(colTs)
+                val snap    = MoonPhaseCalculator.compute(ts)
+                db.execSQL(
+                    "INSERT INTO `moon_phase_snapshots` (`timestamp`, `phase`, `illumination`, `age`) VALUES (?, ?, ?, ?)",
+                    arrayOf(snap.timestamp, snap.phase, snap.illumination, snap.age),
+                )
+                db.execSQL(
+                    "UPDATE `mood_entries` SET `moonPhaseSnapshotId` = last_insert_rowid() WHERE `id` = ?",
+                    arrayOf(entryId),
+                )
+            }
+        } finally {
+            cursor.close()
+        }
     }
 }
 

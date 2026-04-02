@@ -43,6 +43,7 @@ import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshot
 import com.moodfox.data.local.db.MoonPhaseSnapshotDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.data.remote.WeatherService
@@ -272,12 +273,13 @@ fun CheckInScreen(
     var showWeatherOverride   by remember { mutableStateOf(false) }
 
     // Moon phase (always computed — no permissions needed)
-    var moonPhaseSnapshotId  by remember { mutableStateOf<Long?>(null) }
+    // Stored in memory only; inserted into the DB at save time to avoid orphan rows.
+    var moonPhaseSnapshot    by remember { mutableStateOf<MoonPhaseSnapshot?>(null) }
     var moonPhaseDisplay     by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         val snap = MoonPhaseCalculator.compute()
-        moonPhaseSnapshotId = moonPhaseSnapshotDao.insert(snap)
+        moonPhaseSnapshot = snap
         moonPhaseDisplay = "${MoonPhaseCalculator.phaseEmoji(snap.phase)} ${snap.phase}"
     }
 
@@ -512,6 +514,7 @@ fun CheckInScreen(
                                 val causeJson = JSONArray().apply {
                                     selectedCauses.forEach { put(it) }
                                 }.toString()
+                                val moonId = moonPhaseSnapshot?.let { moonPhaseSnapshotDao.insert(it) }
                                 moodEntryDao.insert(
                                     MoodEntry(
                                         timestamp           = System.currentTimeMillis(),
@@ -519,7 +522,7 @@ fun CheckInScreen(
                                         causeIds            = causeJson,
                                         note                = note.trimEnd().ifEmpty { null },
                                         weatherSnapshotId   = weatherSnapshotId,
-                                        moonPhaseSnapshotId = moonPhaseSnapshotId,
+                                        moonPhaseSnapshotId = moonId,
                                     )
                                 )
                                 lastSavedMood = moodValue

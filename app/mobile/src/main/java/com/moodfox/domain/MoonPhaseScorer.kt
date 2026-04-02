@@ -9,22 +9,18 @@ import com.moodfox.data.local.db.MoonPhaseSnapshot
 object MoonPhaseScorer {
 
     fun score(snap: MoonPhaseSnapshot): Int {
-        // Phase-based component (dominant signal)
-        val phaseScore = when (snap.phase) {
-            "New Moon"         -> -3f
-            "Waxing Crescent"  ->  0f
-            "First Quarter"    -> +2f
-            "Waxing Gibbous"   -> +3f
-            "Full Moon"        -> +1f
-            "Waning Gibbous"   ->  0f
-            "Third Quarter"    -> -1f
-            "Waning Crescent"  -> -2f
-            else               ->  0f
+        // Maps each phase directly onto the intended -10..+10 mood scale:
+        // New Moon (dark) = -10, Full Moon (bright) = +10.
+        return when (snap.phase) {
+            "New Moon"         -> -10
+            "Waxing Crescent"  ->  -5
+            "First Quarter"    ->   0
+            "Waxing Gibbous"   ->   5
+            "Full Moon"        ->  10
+            "Waning Gibbous"   ->   5
+            "Third Quarter"    ->   0
+            "Waning Crescent"  ->  -5
+            else               ->   0
         }
-
-        // Illumination component: 0% → -1, 50% → 0, 100% → +1
-        val illumBonus = (snap.illumination / 100f) * 2f - 1f
-
-        return (phaseScore + illumBonus).toInt().coerceIn(-10, 10)
     }
 }
