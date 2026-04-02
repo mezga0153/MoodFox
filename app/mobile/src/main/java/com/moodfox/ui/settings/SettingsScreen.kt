@@ -43,6 +43,7 @@ import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshotDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.data.remote.GeoCity
 import com.moodfox.data.remote.WeatherService
@@ -64,6 +65,7 @@ fun SettingsScreen(
     moodEntryDao: MoodEntryDao,
     causeCategoryDao: CauseCategoryDao,
     weatherSnapshotDao: WeatherSnapshotDao,
+    moonPhaseSnapshotDao: MoonPhaseSnapshotDao,
     weatherService: WeatherService,
     onNavigateToCategories: () -> Unit,
     onNavigateToHowItWorks: () -> Unit,
@@ -548,7 +550,7 @@ fun SettingsScreen(
                         if (!seeding && !seedDone) {
                             seeding = true
                             scope.launch {
-                                seedDummyData(moodEntryDao, causeCategoryDao, weatherSnapshotDao)
+                                seedDummyData(moodEntryDao, causeCategoryDao, weatherSnapshotDao, moonPhaseSnapshotDao)
                                 seeding = false
                                 seedDone = true
                             }

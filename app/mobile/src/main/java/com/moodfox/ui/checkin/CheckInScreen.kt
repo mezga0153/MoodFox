@@ -43,8 +43,10 @@ import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshotDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.data.remote.WeatherService
+import com.moodfox.domain.MoonPhaseCalculator
 import com.moodfox.ui.components.HelperBar
 import com.moodfox.ui.components.localizedCauseName
 import com.moodfox.ui.theme.AppColors
@@ -241,6 +243,7 @@ fun CheckInScreen(
     moodEntryDao: MoodEntryDao,
     causeCategoryDao: CauseCategoryDao,
     weatherSnapshotDao: WeatherSnapshotDao,
+    moonPhaseSnapshotDao: MoonPhaseSnapshotDao,
     weatherService: WeatherService,
     weatherEnabled: Boolean,
     manualCity: String?,
@@ -267,6 +270,16 @@ fun CheckInScreen(
     var detectedCondition     by remember { mutableStateOf<String?>(null) }
     var detectedTempC         by remember { mutableStateOf<Float?>(null) }
     var showWeatherOverride   by remember { mutableStateOf(false) }
+
+    // Moon phase (always computed — no permissions needed)
+    var moonPhaseSnapshotId  by remember { mutableStateOf<Long?>(null) }
+    var moonPhaseDisplay     by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        val snap = MoonPhaseCalculator.compute()
+        moonPhaseSnapshotId = moonPhaseSnapshotDao.insert(snap)
+        moonPhaseDisplay = "${MoonPhaseCalculator.phaseEmoji(snap.phase)} ${snap.phase}"
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -387,29 +400,49 @@ fun CheckInScreen(
                 modifier  = Modifier.padding(top = 16.dp),
             )
 
-            if (weatherEnabled && weatherDisplay != null) {
+            if (weatherEnabled && weatherDisplay != null || moonPhaseDisplay != null) {
                 Spacer(Modifier.height(8.dp))
-                Surface(
-                    shape    = RoundedCornerShape(20.dp),
-                    color    = colors.cardSurface,
-                    modifier = Modifier.clickable { showWeatherOverride = true },
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-                    ) {
-                        Text(
-                            text  = weatherDisplay!!,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = colors.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Icon(
-                            imageVector        = Icons.Filled.EditNote,
-                            contentDescription = "Override weather",
-                            tint               = colors.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier           = Modifier.size(14.dp),
-                        )
+                    if (weatherEnabled && weatherDisplay != null) {
+                        Surface(
+                            shape    = RoundedCornerShape(20.dp),
+                            color    = colors.cardSurface,
+                            modifier = Modifier.clickable { showWeatherOverride = true },
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                            ) {
+                                Text(
+                                    text  = weatherDisplay!!,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = colors.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Icon(
+                                    imageVector        = Icons.Filled.EditNote,
+                                    contentDescription = "Override weather",
+                                    tint               = colors.onSurfaceVariant.copy(alpha = 0.5f),
+                                    modifier           = Modifier.size(14.dp),
+                                )
+                            }
+                        }
+                    }
+                    if (moonPhaseDisplay != null) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = colors.cardSurface,
+                        ) {
+                            Text(
+                                text     = moonPhaseDisplay!!,
+                                style    = MaterialTheme.typography.labelMedium,
+                                color    = colors.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -481,11 +514,12 @@ fun CheckInScreen(
                                 }.toString()
                                 moodEntryDao.insert(
                                     MoodEntry(
-                                        timestamp         = System.currentTimeMillis(),
-                                        moodValue         = moodValue,
-                                        causeIds          = causeJson,
-                                        note              = note.trimEnd().ifEmpty { null },
-                                        weatherSnapshotId = weatherSnapshotId,
+                                        timestamp           = System.currentTimeMillis(),
+                                        moodValue           = moodValue,
+                                        causeIds            = causeJson,
+                                        note                = note.trimEnd().ifEmpty { null },
+                                        weatherSnapshotId   = weatherSnapshotId,
+                                        moonPhaseSnapshotId = moonPhaseSnapshotId,
                                     )
                                 )
                                 lastSavedMood = moodValue

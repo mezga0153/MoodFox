@@ -12,11 +12,14 @@ import com.moodfox.data.local.db.CauseCategory
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshot
+import com.moodfox.data.local.db.MoonPhaseSnapshotDao
 import com.moodfox.data.local.db.WeatherSnapshot
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.moodfox.domain.MoonPhaseScorer
 import com.moodfox.domain.WeatherScorer
 import org.dhatim.fastexcel.Workbook
 import org.json.JSONArray
@@ -40,18 +43,20 @@ class BackupManager @Inject constructor(
     private val moodEntryDao: MoodEntryDao,
     private val causeCategoryDao: CauseCategoryDao,
     private val weatherSnapshotDao: WeatherSnapshotDao,
+    private val moonPhaseSnapshotDao: MoonPhaseSnapshotDao,
 ) {
     private val fmt    = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault())
     suspend fun exportXlsx(): Intent = withContext(Dispatchers.IO) {
         val entries    = moodEntryDao.getAllList()
         val categories = causeCategoryDao.getAllList().associateBy { it.id }
         val snapshots  = weatherSnapshotDao.getAllList().associateBy { it.id }
+        val moonSnaps  = moonPhaseSnapshotDao.getAllList().associateBy { it.id }
 
         val file = File(context.cacheDir, "moodfox_export.xlsx")
         file.outputStream().buffered().use { out ->
             Workbook(out, "MoodFox", "1.0").use { wb ->
                 val ws = wb.newWorksheet("Mood Entries")
-                listOf("ID", "Date", "Time", "Mood", "Causes", "Note", "Weather", "Temp (\u00b0C)", "Weather Score")
+                listOf("ID", "Date", "Time", "Mood", "Causes", "Note", "Weather", "Temp (\u00b0C)", "Weather Score", "Moon Phase", "Moon Illumination %", "Moon Score")
                     .forEachIndexed { col, name -> ws.value(0, col, name) }
                 entries.forEachIndexed { i, e ->
                     val row = i + 1
@@ -71,6 +76,10 @@ class BackupManager @Inject constructor(
                     ws.value(row, 6, snap?.condition ?: "")
                     if (snap != null) ws.value(row, 7, snap.temperatureC.toInt().toDouble())
                     if (snap != null) ws.value(row, 8, WeatherScorer.score(snap).toDouble())
+                    val moon = e.moonPhaseSnapshotId?.let { moonSnaps[it] }
+                    ws.value(row, 9, moon?.phase ?: "")
+                    if (moon != null) ws.value(row, 10, moon.illumination.toInt().toDouble())
+                    if (moon != null) ws.value(row, 11, MoonPhaseScorer.score(moon).toDouble())
                 }
             }
         }
@@ -81,6 +90,7 @@ class BackupManager @Inject constructor(
         val entries    = moodEntryDao.getAllList()
         val categories = causeCategoryDao.getAllList()
         val snapshots  = weatherSnapshotDao.getAllList()
+        val moonSnapshots = moonPhaseSnapshotDao.getAllList()
 
         val entriesJson = JSONArray().also { arr ->
             entries.forEach { e ->
@@ -91,6 +101,7 @@ class BackupManager @Inject constructor(
                     put("causeIds",          e.causeIds)
                     put("note",              e.note ?: JSONObject.NULL)
                     put("weatherSnapshotId", e.weatherSnapshotId ?: JSONObject.NULL)
+                    put("moonPhaseSnapshotId", e.moonPhaseSnapshotId ?: JSONObject.NULL)
                 })
             }
         }.toString()
@@ -122,15 +133,28 @@ class BackupManager @Inject constructor(
             }
         }.toString()
 
+        val moonSnapshotsJson = JSONArray().also { arr ->
+            moonSnapshots.forEach { s ->
+                arr.put(JSONObject().apply {
+                    put("id",           s.id)
+                    put("timestamp",    s.timestamp)
+                    put("phase",        s.phase)
+                    put("illumination", s.illumination.toDouble())
+                    put("age",          s.age.toDouble())
+                })
+            }
+        }.toString()
+
         val date = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault()).format(Instant.now())
         val fileName = "MoodFox Backup $date.zip"
 
         val tmpZip = File(context.cacheDir, "moodfox_backup_tmp.zip")
         ZipOutputStream(tmpZip.outputStream().buffered()).use { zip ->
             for ((name, content) in listOf(
-                "mood_entries.json"      to entriesJson,
-                "cause_categories.json"  to categoriesJson,
-                "weather_snapshots.json" to snapshotsJson,
+                "mood_entries.json"           to entriesJson,
+                "cause_categories.json"       to categoriesJson,
+                "weather_snapshots.json"      to snapshotsJson,
+                "moon_phase_snapshots.json"   to moonSnapshotsJson,
             )) {
                 zip.putNextEntry(ZipEntry(name))
                 zip.write(content.toByteArray())
@@ -213,18 +237,36 @@ class BackupManager @Inject constructor(
                 causeCategoryDao.insertAllReplace(list)
             }
 
+            // Moon phase snapshots (referenced by entries via moonPhaseSnapshotId)
+            contents["moon_phase_snapshots.json"]?.let { json ->
+                moonPhaseSnapshotDao.deleteAll()
+                val arr  = JSONArray(json)
+                val list = (0 until arr.length()).map { i ->
+                    val o = arr.getJSONObject(i)
+                    MoonPhaseSnapshot(
+                        id           = o.getLong("id"),
+                        timestamp    = o.getLong("timestamp"),
+                        phase        = o.getString("phase"),
+                        illumination = o.getDouble("illumination").toFloat(),
+                        age          = o.getDouble("age").toFloat(),
+                    )
+                }
+                moonPhaseSnapshotDao.insertAll(list)
+            }
+
             contents["mood_entries.json"]?.let { json ->
                 moodEntryDao.deleteAll()
                 val arr  = JSONArray(json)
                 val list = (0 until arr.length()).map { i ->
                     val o = arr.getJSONObject(i)
                     MoodEntry(
-                        id                = o.getLong("id"),
-                        timestamp         = o.getLong("timestamp"),
-                        moodValue         = o.getInt("moodValue"),
-                        causeIds          = o.getString("causeIds"),
-                        note              = if (o.isNull("note")) null else o.getString("note"),
-                        weatherSnapshotId = if (o.isNull("weatherSnapshotId")) null else o.getLong("weatherSnapshotId"),
+                        id                  = o.getLong("id"),
+                        timestamp           = o.getLong("timestamp"),
+                        moodValue           = o.getInt("moodValue"),
+                        causeIds            = o.getString("causeIds"),
+                        note                = if (o.isNull("note")) null else o.getString("note"),
+                        weatherSnapshotId   = if (o.isNull("weatherSnapshotId")) null else o.getLong("weatherSnapshotId"),
+                        moonPhaseSnapshotId = if (o.has("moonPhaseSnapshotId") && !o.isNull("moonPhaseSnapshotId")) o.getLong("moonPhaseSnapshotId") else null,
                     )
                 }
                 moodEntryDao.insertAll(list)
