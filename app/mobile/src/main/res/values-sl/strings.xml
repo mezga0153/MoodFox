@@ -185,6 +185,7 @@
     <string name="analysis_weather_title">Vreme &amp; razpoloženje</string>
     <string name="analysis_weather_rainy">🌧️ Deževni dnevi</string>
     <string name="analysis_weather_dry">☀️ Suhi dnevi</string>
+    <string name="analysis_moon_title">Lunina faza &amp; razpoloženje</string>
     <!-- Zip backup / restore -->
     <string name="backup_zip">Varnostna kopija zip</string>
     <string name="restore_zip">Obnovi iz zip</string>

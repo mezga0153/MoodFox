@@ -4,46 +4,85 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.moodfox.domain.MoonPhaseCalculator
 
-// v1 → v2: add updatedAt column.
-// NOTE: do NOT use "DEFAULT NULL" — SQLite stores it in dflt_value as the string "NULL",
-// which causes Room's identity-hash check to fail against the entity model that has no default.
+// v1 → v2: add moon_phase_snapshots table, moonPhaseSnapshotId FK on mood_entries,
+// and backfill snapshots for all existing entries.
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE `mood_entries` ADD COLUMN `updatedAt` INTEGER")
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `moon_phase_snapshots` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `timestamp` INTEGER NOT NULL,
+                `phase` TEXT NOT NULL,
+                `illumination` REAL NOT NULL,
+                `age` REAL NOT NULL
+            )
+        """.trimIndent())
+        // No DEFAULT NULL — avoids Room identity-hash mismatch from SQLite dflt_value storage.
+        db.execSQL("ALTER TABLE `mood_entries` ADD COLUMN `moonPhaseSnapshotId` INTEGER")
+
+        // Backfill moon phase snapshots for existing entries.
+        val cursor = db.query("SELECT `id`, `timestamp` FROM `mood_entries`")
+        try {
+            val colId = cursor.getColumnIndexOrThrow("id")
+            val colTs = cursor.getColumnIndexOrThrow("timestamp")
+            while (cursor.moveToNext()) {
+                val entryId = cursor.getLong(colId)
+                val ts      = cursor.getLong(colTs)
+                val snap    = MoonPhaseCalculator.compute(ts)
+                db.execSQL(
+                    "INSERT INTO `moon_phase_snapshots` (`timestamp`, `phase`, `illumination`, `age`) VALUES (?, ?, ?, ?)",
+                    arrayOf(snap.timestamp, snap.phase, snap.illumination, snap.age),
+                )
+                db.execSQL(
+                    "UPDATE `mood_entries` SET `moonPhaseSnapshotId` = last_insert_rowid() WHERE `id` = ?",
+                    arrayOf(entryId),
+                )
+            }
+        } finally {
+            cursor.close()
+        }
     }
 }
 
-// v2 → v3: rescue devices that were deployed with the broken MIGRATION_1_2 that used
-// "DEFAULT NULL". SQLite stored dflt_value='NULL' for that column, making Room's hash
-// check fail. We normalise the table so the column definition is exactly what Room expects.
-// We also guard against devices at v2 that never had the column at all (e.g. fresh installs
-// that were created at v2 before updatedAt was in the entity schema).
+// v2 → v3: add updatedAt and normalise mood_entries via full recreation so the schema
+// exactly matches Room's model. Guards for all partial migration states (moon_phase_snapshots
+// may or may not exist depending on upgrade path).
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // Ensure the column exists regardless of which v2 variant the device has.
-        // SQLite will throw if the column already exists — that's fine, we swallow it.
-        try {
-            db.execSQL("ALTER TABLE `mood_entries` ADD COLUMN `updatedAt` INTEGER")
-        } catch (_: Exception) { /* already present — continue to recreation */ }
+        // Guard: ensure moon_phase_snapshots exists.
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `moon_phase_snapshots` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `timestamp` INTEGER NOT NULL,
+                `phase` TEXT NOT NULL,
+                `illumination` REAL NOT NULL,
+                `age` REAL NOT NULL
+            )
+        """.trimIndent())
+        // Guard: add missing columns (SQLite throws if already present — swallow).
+        try { db.execSQL("ALTER TABLE `mood_entries` ADD COLUMN `moonPhaseSnapshotId` INTEGER") } catch (_: Exception) {}
+        try { db.execSQL("ALTER TABLE `mood_entries` ADD COLUMN `updatedAt` INTEGER") } catch (_: Exception) {}
 
-        // Recreate the table to normalise dflt_value (removes the stored "NULL" string
-        // that the first broken migration left behind, which caused the hash mismatch).
+        // Recreate mood_entries so the schema exactly matches Room's expected model,
+        // eliminating any dflt_value artifacts left by earlier broken migrations.
         db.execSQL("""
             CREATE TABLE IF NOT EXISTS `mood_entries_new` (
-                `id`                INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                `timestamp`         INTEGER NOT NULL,
-                `moodValue`         INTEGER NOT NULL,
-                `causeIds`          TEXT NOT NULL,
-                `note`              TEXT,
-                `weatherSnapshotId` INTEGER,
-                `updatedAt`         INTEGER
+                `id`                  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `timestamp`           INTEGER NOT NULL,
+                `moodValue`           INTEGER NOT NULL,
+                `causeIds`            TEXT NOT NULL,
+                `note`                TEXT,
+                `weatherSnapshotId`   INTEGER,
+                `moonPhaseSnapshotId` INTEGER,
+                `updatedAt`           INTEGER
             )
         """.trimIndent())
         db.execSQL("""
             INSERT INTO `mood_entries_new`
                 SELECT `id`, `timestamp`, `moodValue`, `causeIds`, `note`,
-                       `weatherSnapshotId`, `updatedAt`
+                       `weatherSnapshotId`, `moonPhaseSnapshotId`, `updatedAt`
                 FROM `mood_entries`
         """.trimIndent())
         db.execSQL("DROP TABLE `mood_entries`")
@@ -52,7 +91,7 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
 }
 
 @Database(
-    entities = [MoodEntry::class, CauseCategory::class, WeatherSnapshot::class],
+    entities = [MoodEntry::class, CauseCategory::class, WeatherSnapshot::class, MoonPhaseSnapshot::class],
     version = 3,
     exportSchema = false,
 )
@@ -60,4 +99,5 @@ abstract class MoodDatabase : RoomDatabase() {
     abstract fun moodEntryDao(): MoodEntryDao
     abstract fun causeCategoryDao(): CauseCategoryDao
     abstract fun weatherSnapshotDao(): WeatherSnapshotDao
+    abstract fun moonPhaseSnapshotDao(): MoonPhaseSnapshotDao
 }

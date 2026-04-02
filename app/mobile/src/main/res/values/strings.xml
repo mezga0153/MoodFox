@@ -183,6 +183,7 @@
     <string name="analysis_weather_title">Weather &amp; mood</string>
     <string name="analysis_weather_rainy">🌧️ Rainy days</string>
     <string name="analysis_weather_dry">☀️ Dry days</string>
+    <string name="analysis_moon_title">Moon phase &amp; mood</string>
     <!-- Zip backup / restore -->
     <string name="backup_zip">Backup to zip</string>
     <string name="restore_zip">Restore from zip</string>

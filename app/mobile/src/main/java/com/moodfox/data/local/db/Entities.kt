@@ -11,6 +11,7 @@ data class MoodEntry(
     val causeIds: String = "[]",   // JSON array of CauseCategory IDs
     val note: String? = null,
     val weatherSnapshotId: Long? = null,
+    val moonPhaseSnapshotId: Long? = null,
     val updatedAt: Long? = null,   // null = never edited; set on every subsequent edit
 )
 
@@ -33,4 +34,13 @@ data class WeatherSnapshot(
     val condition: String,
     val isRaining: Boolean,
     val humidity: Float,
+)
+
+@Entity(tableName = "moon_phase_snapshots")
+data class MoonPhaseSnapshot(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val timestamp: Long,           // Instant.toEpochMilli()
+    val phase: String,             // "New Moon", "Waxing Crescent", etc.
+    val illumination: Float,       // 0–100 %
+    val age: Float,                // days into the synodic cycle
 )

@@ -139,8 +139,8 @@ object MoodStats {
         val rainyAvg: Float?,
         val dryAvg: Float?,
         val byCondition: List<ConditionMood>,
-        val scoreCorrelation: Float?,            // Pearson r between weather score and mood
-        val byScoreBucket: List<WeatherScoreBucket>,  // Good / Neutral / Poor buckets
+        val scoreCorrelation: Float?,
+        val byScoreBucket: List<WeatherScoreBucket>,
     )
 
     fun weatherAnalysis(
@@ -165,7 +165,6 @@ object MoodStats {
             }
             .sortedByDescending { it.count }
 
-        // Score-based correlation
         val scoredPairs = withSnap.map { (e, s) ->
             WeatherScorer.score(s).toFloat() to e.moodValue.toFloat()
         }
@@ -193,6 +192,68 @@ object MoodStats {
             rainyAvg         = if (rainyMoods.isEmpty()) null else rainyMoods.average().toFloat(),
             dryAvg           = if (dryMoods.isEmpty()) null else dryMoods.average().toFloat(),
             byCondition      = grouped,
+            scoreCorrelation = correlation,
+            byScoreBucket    = byBucket,
+        )
+    }
+
+    // ── Moon phase & mood correlation ─────────────────────────────────────────
+
+    data class PhaseMood(val phase: String, val avg: Float, val count: Int)
+
+    data class MoonScoreBucket(val label: String, val avgMood: Float, val count: Int)
+
+    data class MoonPhaseAnalysis(
+        val byPhase: List<PhaseMood>,
+        val scoreCorrelation: Float?,
+        val byScoreBucket: List<MoonScoreBucket>,
+    )
+
+    fun moonPhaseAnalysis(
+        entries: List<MoodEntry>,
+        snapshots: Map<Long, com.moodfox.data.local.db.MoonPhaseSnapshot>,
+    ): MoonPhaseAnalysis {
+        val withSnap = entries.mapNotNull { e ->
+            val snap = e.moonPhaseSnapshotId?.let { snapshots[it] } ?: return@mapNotNull null
+            e to snap
+        }
+
+        val grouped = withSnap
+            .groupBy { (_, s) -> s.phase }
+            .map { (phase, pairs) ->
+                PhaseMood(
+                    phase = phase,
+                    avg   = pairs.map { (e, _) -> e.moodValue.toFloat() }.average().toFloat(),
+                    count = pairs.size,
+                )
+            }
+            .sortedByDescending { it.count }
+
+        val scoredPairs = withSnap.map { (e, s) ->
+            MoonPhaseScorer.score(s).toFloat() to e.moodValue.toFloat()
+        }
+        val correlation = pearsonR(scoredPairs.map { it.first }, scoredPairs.map { it.second })
+
+        val bucketOrder = listOf("Waxing", "Neutral", "Waning")
+        val byBucket = scoredPairs
+            .groupBy { (score, _) ->
+                when {
+                    score >= 2f  -> "Waxing"
+                    score >= -1f -> "Neutral"
+                    else         -> "Waning"
+                }
+            }
+            .map { (label, pairs) ->
+                MoonScoreBucket(
+                    label   = label,
+                    avgMood = pairs.map { it.second }.average().toFloat(),
+                    count   = pairs.size,
+                )
+            }
+            .sortedBy { bucketOrder.indexOf(it.label) }
+
+        return MoonPhaseAnalysis(
+            byPhase          = grouped,
             scoreCorrelation = correlation,
             byScoreBucket    = byBucket,
         )

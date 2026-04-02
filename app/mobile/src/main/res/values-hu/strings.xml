@@ -183,6 +183,7 @@
     <string name="analysis_weather_title">Időjárás &amp; hangulat</string>
     <string name="analysis_weather_rainy">🌧️ Esős napok</string>
     <string name="analysis_weather_dry">☀️ Száraz napok</string>
+    <string name="analysis_moon_title">Holdfázis &amp; hangulat</string>
     <!-- Zip backup / restore -->
     <string name="backup_zip">Mentés zip-be</string>
     <string name="restore_zip">Visszaállítás zip-ből</string>

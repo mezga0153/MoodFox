@@ -13,6 +13,7 @@ import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshotDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.data.remote.WeatherService
 import com.moodfox.domain.ReminderScheduler
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var moodEntryDao: MoodEntryDao
     @Inject lateinit var causeCategoryDao: CauseCategoryDao
     @Inject lateinit var weatherSnapshotDao: WeatherSnapshotDao
+    @Inject lateinit var moonPhaseSnapshotDao: MoonPhaseSnapshotDao
     @Inject lateinit var weatherService: WeatherService
     @Inject lateinit var reminderScheduler: ReminderScheduler
     @Inject lateinit var backupManager: BackupManager
@@ -69,6 +71,7 @@ class MainActivity : AppCompatActivity() {
                     moodEntryDao = moodEntryDao,
                     causeCategoryDao = causeCategoryDao,
                     weatherSnapshotDao = weatherSnapshotDao,
+                    moonPhaseSnapshotDao = moonPhaseSnapshotDao,
                     weatherService = weatherService,
                     reminderScheduler = reminderScheduler,
                     backupManager = backupManager,
