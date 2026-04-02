@@ -12,6 +12,7 @@ data class MoodEntry(
     val note: String? = null,
     val weatherSnapshotId: Long? = null,
     val moonPhaseSnapshotId: Long? = null,
+    val updatedAt: Long? = null,   // null = never edited; set on every subsequent edit
 )
 
 @Entity(tableName = "cause_categories")
