@@ -16,6 +16,7 @@ import com.moodfox.data.local.BackupManager
 import com.moodfox.data.local.PreferencesManager
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshotDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.data.remote.WeatherService
 import com.moodfox.domain.ReminderScheduler
@@ -42,6 +43,7 @@ fun MoodFoxNavGraph(
     moodEntryDao: MoodEntryDao,
     causeCategoryDao: CauseCategoryDao,
     weatherSnapshotDao: WeatherSnapshotDao,
+    moonPhaseSnapshotDao: MoonPhaseSnapshotDao,
     weatherService: WeatherService,
     reminderScheduler: ReminderScheduler,
     backupManager: BackupManager,
@@ -112,30 +114,33 @@ fun MoodFoxNavGraph(
             }
             composable("checkin") {
                 CheckInScreen(
-                    moodEntryDao       = moodEntryDao,
-                    causeCategoryDao   = causeCategoryDao,
-                    weatherSnapshotDao = weatherSnapshotDao,
-                    weatherService     = weatherService,
-                    weatherEnabled     = weatherEnabled,
-                    manualCity         = manualCity,
-                    characterMode      = characterMode,
+                    moodEntryDao         = moodEntryDao,
+                    causeCategoryDao     = causeCategoryDao,
+                    weatherSnapshotDao   = weatherSnapshotDao,
+                    moonPhaseSnapshotDao = moonPhaseSnapshotDao,
+                    weatherService       = weatherService,
+                    weatherEnabled       = weatherEnabled,
+                    manualCity           = manualCity,
+                    characterMode        = characterMode,
                 )
             }
             composable("calendar") {
                 CalendarScreen(
-                    moodEntryDao       = moodEntryDao,
-                    causeCategoryDao   = causeCategoryDao,
-                    weatherSnapshotDao = weatherSnapshotDao,
-                    weatherService     = weatherService,
-                    weatherEnabled     = weatherEnabled,
-                    characterMode      = characterMode,
+                    moodEntryDao         = moodEntryDao,
+                    causeCategoryDao     = causeCategoryDao,
+                    weatherSnapshotDao   = weatherSnapshotDao,
+                    moonPhaseSnapshotDao = moonPhaseSnapshotDao,
+                    weatherService       = weatherService,
+                    weatherEnabled       = weatherEnabled,
+                    characterMode        = characterMode,
                 )
             }
             composable("analysis") {
                 AnalysisScreen(
-                    moodEntryDao       = moodEntryDao,
-                    causeCategoryDao   = causeCategoryDao,
-                    weatherSnapshotDao = weatherSnapshotDao,
+                    moodEntryDao         = moodEntryDao,
+                    causeCategoryDao     = causeCategoryDao,
+                    weatherSnapshotDao   = weatherSnapshotDao,
+                    moonPhaseSnapshotDao = moonPhaseSnapshotDao,
                 )
             }
             composable("settings") {
@@ -146,6 +151,7 @@ fun MoodFoxNavGraph(
                     moodEntryDao       = moodEntryDao,
                     causeCategoryDao   = causeCategoryDao,
                     weatherSnapshotDao = weatherSnapshotDao,
+                    moonPhaseSnapshotDao = moonPhaseSnapshotDao,
                     weatherService     = weatherService,
                     onNavigateToCategories = { navController.navigate("settings/categories") },
                     onNavigateToHowItWorks = { navController.navigate("how_it_works") },

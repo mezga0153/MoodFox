@@ -49,6 +49,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshotDao
+import com.moodfox.domain.MoonPhaseCalculator
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.data.remote.WeatherService
 import com.moodfox.ui.checkin.CausesCard
@@ -125,6 +127,7 @@ fun CalendarScreen(
     moodEntryDao: MoodEntryDao,
     causeCategoryDao: CauseCategoryDao,
     weatherSnapshotDao: WeatherSnapshotDao,
+    moonPhaseSnapshotDao: MoonPhaseSnapshotDao,
     weatherService: WeatherService,
     weatherEnabled: Boolean,
     characterMode: String = "fox",
@@ -158,6 +161,10 @@ fun CalendarScreen(
     val allSnapshots by weatherSnapshotDao.getAll().collectAsState(initial = emptyList())
     val snapshotMap: Map<Long, com.moodfox.data.local.db.WeatherSnapshot> = remember(allSnapshots) {
         allSnapshots.associateBy { it.id }
+    }
+    val allMoonSnapshots by moonPhaseSnapshotDao.getAll().collectAsState(initial = emptyList())
+    val moonSnapshotMap: Map<Long, com.moodfox.data.local.db.MoonPhaseSnapshot> = remember(allMoonSnapshots) {
+        allMoonSnapshots.associateBy { it.id }
     }
 
     // Load entries for ±1 month window so navigating stays fast
@@ -233,6 +240,7 @@ fun CalendarScreen(
             allCategories = allCategories,
             categoryMap   = categoryMap,
             snapshotMap   = snapshotMap,
+            moonSnapshotMap = moonSnapshotMap,
             colors        = colors,
             characterMode = characterMode,
             onAddEntry    = { day -> selectedDay = day; showAddSheet = true },
@@ -248,7 +256,9 @@ fun CalendarScreen(
             onDismiss        = { showAddSheet = false },
             onSave           = { entry ->
                 scope.launch {
-                    moodEntryDao.insert(entry.copy(weatherSnapshotId = pendingSnapshotId))
+                    val moonSnap = MoonPhaseCalculator.compute(entry.timestamp)
+                    val moonId = moonPhaseSnapshotDao.insert(moonSnap)
+                    moodEntryDao.insert(entry.copy(weatherSnapshotId = pendingSnapshotId, moonPhaseSnapshotId = moonId))
                     pendingSnapshotId = null
                     showAddSheet = false
                 }
@@ -270,6 +280,7 @@ private fun CalendarListView(
     allCategories: List<CauseCategory>,
     categoryMap: Map<Long, CauseCategory>,
     snapshotMap: Map<Long, com.moodfox.data.local.db.WeatherSnapshot>,
+    moonSnapshotMap: Map<Long, com.moodfox.data.local.db.MoonPhaseSnapshot>,
     colors: AppColors,
     characterMode: String,
     onAddEntry: (LocalDate) -> Unit,
@@ -415,6 +426,7 @@ private fun CalendarListView(
 
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 val snap = entry.weatherSnapshotId?.let { snapshotMap[it] }
+                                val moonSnap = entry.moonPhaseSnapshotId?.let { moonSnapshotMap[it] }
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -465,6 +477,19 @@ private fun CalendarListView(
                                             ) {
                                                 Text(
                                                     text     = "${conditionEmoji(snap.condition)} ${snap.temperatureC.toInt()}°C",
+                                                    style    = MaterialTheme.typography.labelSmall,
+                                                    color    = colors.onSurfaceVariant,
+                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                                )
+                                            }
+                                        }
+                                        if (moonSnap != null) {
+                                            Surface(
+                                                shape = RoundedCornerShape(20.dp),
+                                                color = colors.outline.copy(alpha = 0.15f),
+                                            ) {
+                                                Text(
+                                                    text     = "${MoonPhaseCalculator.phaseEmoji(moonSnap.phase)} ${moonSnap.phase}",
                                                     style    = MaterialTheme.typography.labelSmall,
                                                     color    = colors.onSurfaceVariant,
                                                     modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),

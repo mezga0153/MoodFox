@@ -93,3 +93,24 @@ interface WeatherSnapshotDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(snapshots: List<WeatherSnapshot>)
 }
+
+@Dao
+interface MoonPhaseSnapshotDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(snapshot: MoonPhaseSnapshot): Long
+
+    @Query("SELECT * FROM moon_phase_snapshots WHERE id = :id")
+    suspend fun getById(id: Long): MoonPhaseSnapshot?
+
+    @Query("SELECT * FROM moon_phase_snapshots")
+    fun getAll(): kotlinx.coroutines.flow.Flow<List<MoonPhaseSnapshot>>
+
+    @Query("SELECT * FROM moon_phase_snapshots")
+    suspend fun getAllList(): List<MoonPhaseSnapshot>
+
+    @Query("DELETE FROM moon_phase_snapshots")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(snapshots: List<MoonPhaseSnapshot>)
+}

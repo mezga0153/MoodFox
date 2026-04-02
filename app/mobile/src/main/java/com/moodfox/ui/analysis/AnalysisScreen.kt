@@ -22,8 +22,10 @@ import com.moodfox.R
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshotDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
 import com.moodfox.domain.MoodStats
+import com.moodfox.domain.MoonPhaseCalculator
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
 import java.time.Instant
@@ -43,6 +45,7 @@ fun AnalysisScreen(
     moodEntryDao: MoodEntryDao,
     causeCategoryDao: CauseCategoryDao,
     weatherSnapshotDao: WeatherSnapshotDao,
+    moonPhaseSnapshotDao: MoonPhaseSnapshotDao,
 ) {
     val colors = LocalAppColors.current
     var range  by remember { mutableStateOf(Range.D30) }
@@ -55,6 +58,8 @@ fun AnalysisScreen(
     val categories by causeCategoryDao.getActive().collectAsState(initial = emptyList())
     val allSnapshots by weatherSnapshotDao.getAll().collectAsState(initial = emptyList())
     val snapshotMap = remember(allSnapshots) { allSnapshots.associateBy { it.id } }
+    val allMoonSnapshots by moonPhaseSnapshotDao.getAll().collectAsState(initial = emptyList())
+    val moonSnapshotMap = remember(allMoonSnapshots) { allMoonSnapshots.associateBy { it.id } }
 
     val summary     = remember(entries) { MoodStats.periodSummary(entries) }
     val ema         = remember(entries) { MoodStats.rollingEma(entries) }
@@ -62,6 +67,7 @@ fun AnalysisScreen(
     val byTime      = remember(entries) { MoodStats.byTimeOfDay(entries) }
     val causes      = remember(entries) { MoodStats.causeFrequencies(entries) }
     val weatherStat = remember(entries, snapshotMap) { MoodStats.weatherAnalysis(entries, snapshotMap) }
+    val moonStat    = remember(entries, moonSnapshotMap) { MoodStats.moonPhaseAnalysis(entries, moonSnapshotMap) }
 
     val screenGradient = Brush.verticalGradient(
         listOf(colors.primary.copy(alpha = 0.12f), colors.surface),
@@ -167,6 +173,15 @@ fun AnalysisScreen(
             SectionTitle(R.string.analysis_weather_title, colors)
             Spacer(Modifier.height(8.dp))
             WeatherMoodSection(stat = weatherStat, colors = colors)
+        }
+
+        // ── Moon phase & mood ─────────────────────────────
+        val hasMoon = moonStat.byPhase.isNotEmpty()
+        if (hasMoon) {
+            Spacer(Modifier.height(16.dp))
+            SectionTitle(R.string.analysis_moon_title, colors)
+            Spacer(Modifier.height(8.dp))
+            MoonPhaseMoodSection(stat = moonStat, colors = colors)
         }
 
         Spacer(Modifier.height(24.dp))
@@ -594,6 +609,88 @@ private fun WeatherMoodSection(stat: MoodStats.WeatherAnalysis, colors: AppColor
                         textAlign = TextAlign.End,
                     )
                 }
+            }
+        }
+    }
+}
+
+// ── Moon phase & mood section ─────────────────────────────
+
+@Composable
+private fun MoonPhaseMoodSection(stat: MoodStats.MoonPhaseAnalysis, colors: AppColors) {
+
+    fun moodStr(v: Float) = if (v >= 0) "+%.1f".format(v) else "%.1f".format(v)
+
+    Surface(
+        shape    = RoundedCornerShape(16.dp),
+        color    = colors.cardSurface,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            // Per-phase bars
+            stat.byPhase.forEach { pm ->
+                val barFraction = ((pm.avg + 10f) / 20f).coerceIn(0f, 1f)
+                val barColor = when {
+                    pm.avg > 2f  -> colors.secondary
+                    pm.avg < -2f -> colors.tertiary
+                    else         -> colors.primary
+                }
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "${MoonPhaseCalculator.phaseEmoji(pm.phase)} ${pm.phase} (${pm.count}×)",
+                        style    = MaterialTheme.typography.bodyMedium,
+                        color    = colors.onSurface,
+                        modifier = Modifier.width(170.dp),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(colors.outline)
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(barFraction)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(barColor)
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        moodStr(pm.avg),
+                        style    = MaterialTheme.typography.labelLarge,
+                        color    = barColor,
+                        modifier = Modifier.width(36.dp),
+                        textAlign = TextAlign.End,
+                    )
+                }
+            }
+
+            // Correlation line
+            val r = stat.scoreCorrelation
+            if (r != null) {
+                Spacer(Modifier.height(10.dp))
+                HorizontalDivider(color = colors.outline.copy(alpha = 0.3f))
+                Spacer(Modifier.height(8.dp))
+                val strength = when {
+                    kotlin.math.abs(r) >= 0.5f  -> "strong"
+                    kotlin.math.abs(r) >= 0.25f -> "moderate"
+                    else                         -> "weak"
+                }
+                val dir = if (r >= 0) "positive" else "negative"
+                val rStr = if (r >= 0) "+%.2f".format(r) else "%.2f".format(r)
+                Text(
+                    "Moon phase shows $strength $dir correlation with mood (r = $rStr).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant,
+                )
             }
         }
     }

@@ -3,8 +3,10 @@ package com.moodfox.data.local
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MoodEntry
 import com.moodfox.data.local.db.MoodEntryDao
+import com.moodfox.data.local.db.MoonPhaseSnapshotDao
 import com.moodfox.data.local.db.WeatherSnapshot
 import com.moodfox.data.local.db.WeatherSnapshotDao
+import com.moodfox.domain.MoonPhaseCalculator
 import org.json.JSONArray
 import java.time.LocalDate
 import java.time.LocalTime
@@ -31,6 +33,7 @@ suspend fun seedDummyData(
     moodEntryDao: MoodEntryDao,
     causeCategoryDao: CauseCategoryDao,
     weatherSnapshotDao: WeatherSnapshotDao,
+    moonPhaseSnapshotDao: MoonPhaseSnapshotDao,
 ) {
     val causeIds = causeCategoryDao.getAllList()
         .filter { it.isActive }
@@ -65,6 +68,11 @@ suspend fun seedDummyData(
             )
         )
 
+        // Moon phase snapshot (computed from date)
+        val moonTs = date.atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        val moonSnap = MoonPhaseCalculator.compute(moonTs)
+        val moonSnapshotId = moonPhaseSnapshotDao.insert(moonSnap)
+
         // 2–5 entries per day
         val entryCount = rng.nextInt(2, 6)
         val times = timeSlots.shuffled(rng).take(entryCount).sorted()
@@ -75,11 +83,12 @@ suspend fun seedDummyData(
 
             moodEntryDao.insert(
                 MoodEntry(
-                    timestamp         = date.atTime(time).atZone(zone).toInstant().toEpochMilli(),
-                    moodValue         = rng.nextInt(-10, 11),
-                    causeIds          = JSONArray(selectedCauses).toString(),
-                    note              = sampleNotes.random(rng),
-                    weatherSnapshotId = if (rng.nextFloat() < 0.4f) snapshotId else null,
+                    timestamp           = date.atTime(time).atZone(zone).toInstant().toEpochMilli(),
+                    moodValue           = rng.nextInt(-10, 11),
+                    causeIds            = JSONArray(selectedCauses).toString(),
+                    note                = sampleNotes.random(rng),
+                    weatherSnapshotId   = if (rng.nextFloat() < 0.4f) snapshotId else null,
+                    moonPhaseSnapshotId = moonSnapshotId,
                 )
             )
         }
