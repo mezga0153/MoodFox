@@ -166,6 +166,11 @@
     <string name="helper_frog">Žaba</string>
     <string name="helper_bunny">Zajček</string>
     <string name="helper_panda">Panda</string>
+    <string name="helper_wolf">Volk</string>
+    <string name="helper_bear">Medved</string>
+    <string name="helper_eagle">Orel</string>
+    <string name="helper_dragon">Zmaj</string>
+    <string name="helper_owl">Sova</string>
 
     <!-- Error / empty states -->
     <string name="placeholder_no_data">—</string>

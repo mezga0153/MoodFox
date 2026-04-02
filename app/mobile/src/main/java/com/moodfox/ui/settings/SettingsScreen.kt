@@ -131,13 +131,15 @@ fun SettingsScreen(
                 }
             }
             Spacer(Modifier.height(12.dp))
-            Row(
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier              = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 ThemePreset.entries.groupBy { it.accentHue }.forEach { (hue, presets) ->
                     val selected     = currentPreset.accentHue == hue
-                    val previewColor = buildAppColors(hue, currentMode).primary
+                    val satScale     = presets.first().satScale
+                    val previewColor = buildAppColors(hue, currentMode, satScale).primary
                     Box(
                         modifier = Modifier
                             .size(36.dp)

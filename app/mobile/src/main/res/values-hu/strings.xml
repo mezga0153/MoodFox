@@ -164,6 +164,11 @@
     <string name="helper_frog">Béka</string>
     <string name="helper_bunny">Nyuszi</string>
     <string name="helper_panda">Panda</string>
+    <string name="helper_wolf">Farkas</string>
+    <string name="helper_bear">Medve</string>
+    <string name="helper_eagle">Sas</string>
+    <string name="helper_dragon">Sárkány</string>
+    <string name="helper_owl">Bagoly</string>
 
     <!-- Error / empty states -->
     <string name="placeholder_no_data">—</string>

@@ -170,6 +170,11 @@
     <string name="helper_frog">Frog</string>
     <string name="helper_bunny">Bunny</string>
     <string name="helper_panda">Panda</string>
+    <string name="helper_wolf">Wolf</string>
+    <string name="helper_bear">Bear</string>
+    <string name="helper_eagle">Eagle</string>
+    <string name="helper_dragon">Dragon</string>
+    <string name="helper_owl">Owl</string>
 
     <!-- Error / empty states -->
     <string name="placeholder_no_data">—</string>

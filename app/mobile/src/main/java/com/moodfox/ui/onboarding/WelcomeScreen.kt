@@ -491,6 +491,7 @@ private fun OnboardingPage3() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun OnboardingPage4(preferencesManager: PreferencesManager) {
     val colors = LocalAppColors.current
@@ -519,34 +520,53 @@ private fun OnboardingPage4(preferencesManager: PreferencesManager) {
         )
         Spacer(Modifier.height(32.dp))
 
-        // Color theme swatch grid
+        // Color theme selector (matches Settings)
         val currentPresetName by preferencesManager.themePreset.collectAsState(initial = "PURPLE_DARK")
-        com.moodfox.ui.theme.ThemePreset.entries.chunked(5).forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+        val currentPreset = try { ThemePreset.valueOf(currentPresetName) } catch (_: Exception) { ThemePreset.PURPLE_DARK }
+        val currentMode = currentPreset.mode
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OnboardingToneChip(
+                label    = stringResource(R.string.theme_dark),
+                selected = currentMode == ThemeMode.DARK,
+                colors   = colors,
             ) {
-                row.forEach { preset ->
-                    val presetColors = buildAppColors(preset.accentHue, preset.mode)
-                    val selected = preset.name == currentPresetName
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(presetColors.primary)
-                            .then(
-                                if (selected) Modifier.padding(3.dp)
-                                    .clip(CircleShape)
-                                    .background(presetColors.surface)
-                                else Modifier
-                            )
-                            .clickable {
-                                scope.launch { preferencesManager.setThemePreset(preset.name) }
-                            },
-                    )
-                }
+                val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.DARK }
+                scope.launch { preferencesManager.setThemePreset(target.name) }
             }
-            Spacer(Modifier.height(10.dp))
+            OnboardingToneChip(
+                label    = stringResource(R.string.theme_light),
+                selected = currentMode == ThemeMode.LIGHT,
+                colors   = colors,
+            ) {
+                val target = ThemePreset.entries.first { it.accentHue == currentPreset.accentHue && it.mode == ThemeMode.LIGHT }
+                scope.launch { preferencesManager.setThemePreset(target.name) }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            ThemePreset.entries.groupBy { it.accentHue }.forEach { (hue, presets) ->
+                val selected     = currentPreset.accentHue == hue
+                val satScale     = presets.first().satScale
+                val previewColor = buildAppColors(hue, currentMode, satScale).primary
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(previewColor)
+                        .then(
+                            if (selected) Modifier.border(2.5.dp, colors.onSurface, CircleShape)
+                            else Modifier
+                        )
+                        .clickable {
+                            val target = presets.first { it.mode == currentMode }
+                            scope.launch { preferencesManager.setThemePreset(target.name) }
+                        },
+                )
+            }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -917,3 +937,22 @@ private fun WelcomeToneChip(label: String, selected: Boolean, colors: AppColors,
 // needed for .sp in onboarding pages
 private val Int.sp get() = this.toFloat().sp
 private val Float.sp get() = androidx.compose.ui.unit.TextUnit(this, androidx.compose.ui.unit.TextUnitType.Sp)
+
+@Composable
+private fun OnboardingToneChip(label: String, selected: Boolean, colors: AppColors, onClick: () -> Unit) {
+    val bg     = if (selected) colors.primary else colors.cardSurface
+    val border = if (selected) colors.primary else colors.outline
+    val text   = if (selected) (if (colors.isDark) Color.Black.copy(alpha = 0.85f) else Color.White)
+                 else colors.onSurfaceVariant
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(20.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelLarge, color = text)
+    }
+}

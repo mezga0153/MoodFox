@@ -215,6 +215,102 @@ internal fun characterDrawableForValue(mode: String, value: Int): Int {
             10  -> R.drawable.panda_mood_10
             else -> R.drawable.panda_mood_0
         }
+        "wolf" -> when (v) {
+            -10 -> R.drawable.wolf_mood_neg10
+            -9  -> R.drawable.wolf_mood_neg9
+            -8  -> R.drawable.wolf_mood_neg8
+            -7  -> R.drawable.wolf_mood_neg7
+            -6  -> R.drawable.wolf_mood_neg6
+            -5  -> R.drawable.wolf_mood_neg5
+            -4  -> R.drawable.wolf_mood_neg4
+            -3  -> R.drawable.wolf_mood_neg3
+            -2  -> R.drawable.wolf_mood_neg2
+            -1  -> R.drawable.wolf_mood_neg1
+            0   -> R.drawable.wolf_mood_0
+            1   -> R.drawable.wolf_mood_1
+            2   -> R.drawable.wolf_mood_2
+            3   -> R.drawable.wolf_mood_3
+            4   -> R.drawable.wolf_mood_4
+            5   -> R.drawable.wolf_mood_5
+            6   -> R.drawable.wolf_mood_6
+            7   -> R.drawable.wolf_mood_7
+            8   -> R.drawable.wolf_mood_8
+            9   -> R.drawable.wolf_mood_9
+            10  -> R.drawable.wolf_mood_10
+            else -> R.drawable.wolf_mood_0
+        }
+        "bear" -> when (v) {
+            -10 -> R.drawable.bear_mood_neg10
+            -9  -> R.drawable.bear_mood_neg9
+            -8  -> R.drawable.bear_mood_neg8
+            -7  -> R.drawable.bear_mood_neg7
+            -6  -> R.drawable.bear_mood_neg6
+            -5  -> R.drawable.bear_mood_neg5
+            -4  -> R.drawable.bear_mood_neg4
+            -3  -> R.drawable.bear_mood_neg3
+            -2  -> R.drawable.bear_mood_neg2
+            -1  -> R.drawable.bear_mood_neg1
+            0   -> R.drawable.bear_mood_0
+            1   -> R.drawable.bear_mood_1
+            2   -> R.drawable.bear_mood_2
+            3   -> R.drawable.bear_mood_3
+            4   -> R.drawable.bear_mood_4
+            5   -> R.drawable.bear_mood_5
+            6   -> R.drawable.bear_mood_6
+            7   -> R.drawable.bear_mood_7
+            8   -> R.drawable.bear_mood_8
+            9   -> R.drawable.bear_mood_9
+            10  -> R.drawable.bear_mood_10
+            else -> R.drawable.bear_mood_0
+        }
+        "eagle" -> when (v) {
+            -10 -> R.drawable.eagle_mood_neg10
+            -9  -> R.drawable.eagle_mood_neg9
+            -8  -> R.drawable.eagle_mood_neg8
+            -7  -> R.drawable.eagle_mood_neg7
+            -6  -> R.drawable.eagle_mood_neg6
+            -5  -> R.drawable.eagle_mood_neg5
+            -4  -> R.drawable.eagle_mood_neg4
+            -3  -> R.drawable.eagle_mood_neg3
+            -2  -> R.drawable.eagle_mood_neg2
+            -1  -> R.drawable.eagle_mood_neg1
+            0   -> R.drawable.eagle_mood_0
+            1   -> R.drawable.eagle_mood_1
+            2   -> R.drawable.eagle_mood_2
+            3   -> R.drawable.eagle_mood_3
+            4   -> R.drawable.eagle_mood_4
+            5   -> R.drawable.eagle_mood_5
+            6   -> R.drawable.eagle_mood_6
+            7   -> R.drawable.eagle_mood_7
+            8   -> R.drawable.eagle_mood_8
+            9   -> R.drawable.eagle_mood_9
+            10  -> R.drawable.eagle_mood_10
+            else -> R.drawable.eagle_mood_0
+        }
+        "dragon" -> when (v) {
+            -10 -> R.drawable.dragon_mood_neg10
+            -9  -> R.drawable.dragon_mood_neg9
+            -8  -> R.drawable.dragon_mood_neg8
+            -7  -> R.drawable.dragon_mood_neg7
+            -6  -> R.drawable.dragon_mood_neg6
+            -5  -> R.drawable.dragon_mood_neg5
+            -4  -> R.drawable.dragon_mood_neg4
+            -3  -> R.drawable.dragon_mood_neg3
+            -2  -> R.drawable.dragon_mood_neg2
+            -1  -> R.drawable.dragon_mood_neg1
+            0   -> R.drawable.dragon_mood_0
+            1   -> R.drawable.dragon_mood_1
+            2   -> R.drawable.dragon_mood_2
+            3   -> R.drawable.dragon_mood_3
+            4   -> R.drawable.dragon_mood_4
+            5   -> R.drawable.dragon_mood_5
+            6   -> R.drawable.dragon_mood_6
+            7   -> R.drawable.dragon_mood_7
+            8   -> R.drawable.dragon_mood_8
+            9   -> R.drawable.dragon_mood_9
+            10  -> R.drawable.dragon_mood_10
+            else -> R.drawable.dragon_mood_0
+        }
         else -> foxDrawableForValue(v) // "fox" and any unknown mode
     }
 }
