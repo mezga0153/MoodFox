@@ -3,6 +3,7 @@ package com.moodfox.di
 import android.content.Context
 import androidx.room.Room
 import com.moodfox.data.local.db.CauseCategoryDao
+import com.moodfox.data.local.db.MIGRATION_1_2
 import com.moodfox.data.local.db.MoodDatabase
 import com.moodfox.data.local.db.MoodEntryDao
 import com.moodfox.data.local.db.WeatherSnapshotDao
@@ -24,7 +25,9 @@ object DatabaseModule {
             context,
             MoodDatabase::class.java,
             "moodfox.db"
-        ).build()
+        )
+            .addMigrations(MIGRATION_1_2)
+            .build()
     }
 
     @Provides fun provideMoodEntryDao(db: MoodDatabase): MoodEntryDao = db.moodEntryDao()

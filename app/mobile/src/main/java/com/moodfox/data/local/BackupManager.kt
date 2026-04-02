@@ -91,6 +91,7 @@ class BackupManager @Inject constructor(
                     put("causeIds",          e.causeIds)
                     put("note",              e.note ?: JSONObject.NULL)
                     put("weatherSnapshotId", e.weatherSnapshotId ?: JSONObject.NULL)
+                    put("updatedAt",         e.updatedAt ?: JSONObject.NULL)
                 })
             }
         }.toString()
@@ -225,6 +226,7 @@ class BackupManager @Inject constructor(
                         causeIds          = o.getString("causeIds"),
                         note              = if (o.isNull("note")) null else o.getString("note"),
                         weatherSnapshotId = if (o.isNull("weatherSnapshotId")) null else o.getLong("weatherSnapshotId"),
+                        updatedAt         = if (o.isNull("updatedAt") || !o.has("updatedAt")) null else o.getLong("updatedAt"),
                     )
                 }
                 moodEntryDao.insertAll(list)

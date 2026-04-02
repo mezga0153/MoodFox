@@ -191,4 +191,8 @@
     <string name="restore_confirm_message">This will replace all your data with the backup. The app will restart.</string>
     <string name="restore_confirm_yes">Restore</string>
     <string name="restore_confirm_cancel">Cancel</string>
+
+    <!-- Calendar entry edit / delete -->
+    <string name="calendar_delete_confirm">Delete this entry? This cannot be undone.</string>
+    <string name="calendar_entry_updated">Updated ✓</string>
 </resources>

@@ -11,6 +11,7 @@ data class MoodEntry(
     val causeIds: String = "[]",   // JSON array of CauseCategory IDs
     val note: String? = null,
     val weatherSnapshotId: Long? = null,
+    val updatedAt: Long? = null,   // null = never edited; set on every subsequent edit
 )
 
 @Entity(tableName = "cause_categories")

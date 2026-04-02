@@ -193,4 +193,8 @@
     <string name="restore_confirm_message">To bo zamenjalo vse podatke z varnostno kopijo. Aplikacija se bo znova zagnala.</string>
     <string name="restore_confirm_yes">Obnovi</string>
     <string name="restore_confirm_cancel">Prekliči</string>
+
+    <!-- Calendar entry edit / delete -->
+    <string name="calendar_delete_confirm">Izbriši ta vnos? To ni mogoče razveljaviti.</string>
+    <string name="calendar_entry_updated">Posodobljeno ✓</string>
 </resources>

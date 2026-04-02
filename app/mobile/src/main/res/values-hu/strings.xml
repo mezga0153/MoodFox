@@ -191,4 +191,6 @@
     <string name="restore_confirm_message">Ez minden adatodat a mentéssel helyettesíti. Az alkalmazás újraindul.</string>
     <string name="restore_confirm_yes">Visszaállítás</string>
     <string name="restore_confirm_cancel">Mégse</string>
-</resources>
+    <!-- Calendar entry edit / delete -->
+    <string name="calendar_delete_confirm">Törlöd ezt a bejegyzést? Ez nem vonható vissza.</string>
+    <string name="calendar_entry_updated">Frissítve ✓</string></resources>

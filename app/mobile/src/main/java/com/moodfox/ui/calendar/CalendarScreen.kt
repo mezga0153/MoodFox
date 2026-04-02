@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
@@ -57,6 +58,7 @@ import com.moodfox.ui.checkin.SliderCard
 import com.moodfox.ui.checkin.characterDrawableForValue
 import com.moodfox.ui.checkin.foxDrawableForValue
 import com.moodfox.ui.checkin.emojiForValue
+import com.moodfox.ui.components.HelperBar
 import com.moodfox.ui.components.localizedCauseName
 import com.moodfox.ui.theme.AppColors
 import com.moodfox.ui.theme.LocalAppColors
@@ -136,6 +138,10 @@ fun CalendarScreen(
     var displayMonth by remember { mutableStateOf(YearMonth.from(today)) }
     var selectedDay  by remember { mutableStateOf<LocalDate?>(null) }
     var showAddSheet by remember { mutableStateOf(false) }
+    var editingEntry    by remember { mutableStateOf<com.moodfox.data.local.db.MoodEntry?>(null) }
+    var showEditSheet   by remember { mutableStateOf(false) }
+    var showUpdatedBar  by remember { mutableStateOf(false) }
+    var lastUpdatedMood by remember { mutableIntStateOf(0) }
 
     val context           = LocalContext.current
     var pendingSnapshotId by remember { mutableStateOf<Long?>(null) }
@@ -148,6 +154,13 @@ fun CalendarScreen(
         val loc  = weatherService.getLastKnownLocation(context) ?: return@LaunchedEffect
         val snap = weatherService.fetchCurrent(loc.latitude, loc.longitude) ?: return@LaunchedEffect
         pendingSnapshotId = weatherSnapshotDao.insert(snap)
+    }
+
+    LaunchedEffect(showUpdatedBar) {
+        if (showUpdatedBar) {
+            kotlinx.coroutines.delay(2000)
+            showUpdatedBar = false
+        }
     }
 
     val allCategories by causeCategoryDao.getAll().collectAsState(initial = emptyList())
@@ -225,6 +238,14 @@ fun CalendarScreen(
 
         Spacer(Modifier.height(8.dp))
 
+        // ── Updated bar ───────────────────────────────────
+        HelperBar(
+            moodValue = lastUpdatedMood,
+            visible   = showUpdatedBar,
+            colors    = colors,
+            modifier  = Modifier.padding(bottom = 8.dp),
+        )
+
         // ── List view ─────────────────────────────────────
         CalendarListView(
             month         = displayMonth,
@@ -236,6 +257,7 @@ fun CalendarScreen(
             colors        = colors,
             characterMode = characterMode,
             onAddEntry    = { day -> selectedDay = day; showAddSheet = true },
+            onEditEntry   = { entry -> editingEntry = entry; showEditSheet = true },
             onDeleteEntry = { entry -> scope.launch { moodEntryDao.delete(entry) } },
         )
     }
@@ -257,6 +279,27 @@ fun CalendarScreen(
             characterMode    = characterMode,
         )
     }
+
+    // ── Edit entry bottom sheet ──────────────────────────
+    if (showEditSheet && editingEntry != null) {
+        EditEntrySheet(
+            entry         = editingEntry!!,
+            categories    = allCategories.filter { it.isActive },
+            snapshotMap   = snapshotMap,
+            onDismiss     = { showEditSheet = false; editingEntry = null },
+            onSave        = { updated ->
+                scope.launch {
+                    moodEntryDao.update(updated)
+                    lastUpdatedMood = updated.moodValue
+                    showUpdatedBar  = true
+                    showEditSheet   = false
+                    editingEntry    = null
+                }
+            },
+            colors        = colors,
+            characterMode = characterMode,
+        )
+    }
 }
 
 // ── Calendar list view ────────────────────────────────────
@@ -273,8 +316,11 @@ private fun CalendarListView(
     colors: AppColors,
     characterMode: String,
     onAddEntry: (LocalDate) -> Unit,
+    onEditEntry: (MoodEntry) -> Unit,
     onDeleteEntry: (MoodEntry) -> Unit,
 ) {
+    var entryPendingDelete by remember { mutableStateOf<MoodEntry?>(null) }
+
     val days = remember(month, today) {
         (1..month.lengthOfMonth())
             .map { month.atDay(it) }
@@ -485,8 +531,11 @@ private fun CalendarListView(
                                             )
                                         }
                                     }
-                                    IconButton(onClick = { onDeleteEntry(entry) }, modifier = Modifier.size(36.dp)) {
-                                        Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = colors.error, modifier = Modifier.size(16.dp))
+                                    IconButton(onClick = { onEditEntry(entry) }, modifier = Modifier.size(36.dp)) {
+                                        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.cd_edit), tint = colors.primary, modifier = Modifier.size(16.dp))
+                                    }
+                                    IconButton(onClick = { entryPendingDelete = entry }, modifier = Modifier.size(36.dp)) {
+                                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.cd_delete), tint = colors.error, modifier = Modifier.size(16.dp))
                                     }
                                 }
                                 // Note (on click of comment icon)
@@ -506,6 +555,42 @@ private fun CalendarListView(
             }
         }
         item { Spacer(Modifier.height(16.dp)) }
+    }
+
+    // ── Delete confirmation dialog ────────────────────────
+    if (entryPendingDelete != null) {
+        AlertDialog(
+            onDismissRequest = { entryPendingDelete = null },
+            containerColor   = LocalAppColors.current.cardSurface,
+            title = {
+                Text(
+                    stringResource(R.string.button_delete),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = LocalAppColors.current.onSurface,
+                )
+            },
+            text = {
+                Text(
+                    stringResource(R.string.calendar_delete_confirm),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LocalAppColors.current.onSurface,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val toDelete = entryPendingDelete!!
+                    entryPendingDelete = null
+                    onDeleteEntry(toDelete)
+                }) {
+                    Text(stringResource(R.string.button_delete), color = LocalAppColors.current.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { entryPendingDelete = null }) {
+                    Text(stringResource(R.string.button_cancel), color = LocalAppColors.current.onSurfaceVariant)
+                }
+            },
+        )
     }
 }
 
@@ -781,5 +866,147 @@ private fun AddEntrySheet(
                 )
             },
         )
+    }
+}
+
+// ── Edit entry bottom sheet ───────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun EditEntrySheet(
+    entry: MoodEntry,
+    categories: List<CauseCategory>,
+    snapshotMap: Map<Long, com.moodfox.data.local.db.WeatherSnapshot>,
+    onDismiss: () -> Unit,
+    onSave: (MoodEntry) -> Unit,
+    colors: AppColors,
+    characterMode: String,
+) {
+    val initialDateTime = Instant.ofEpochMilli(entry.timestamp)
+        .atZone(ZoneId.systemDefault()).toLocalDateTime()
+
+    var moodValue      by remember { mutableIntStateOf(entry.moodValue) }
+    val initialCauses  = remember(entry.causeIds) {
+        val arr = JSONArray(entry.causeIds)
+        (0 until arr.length()).map { arr.getLong(it) }.toSet()
+    }
+    var selectedCauses by remember { mutableStateOf(initialCauses) }
+    var note           by remember { mutableStateOf(entry.note ?: "") }
+    var showNote       by remember { mutableStateOf(!entry.note.isNullOrBlank()) }
+    var showAllCauses  by remember { mutableStateOf(false) }
+
+    val dateLabel  = "${initialDateTime.dayOfMonth} ${initialDateTime.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${initialDateTime.year}"
+    val timeLabel  = "%02d:%02d".format(initialDateTime.hour, initialDateTime.minute)
+
+    val thumbColor = when {
+        moodValue > 2  -> colors.secondary
+        moodValue < -2 -> colors.tertiary
+        else           -> colors.primary
+    }
+    val scrollState = rememberScrollState()
+    val weatherSnap = entry.weatherSnapshotId?.let { snapshotMap[it] }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor   = colors.cardSurface,
+        dragHandle       = { BottomSheetDefaults.DragHandle(color = colors.outline) },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text       = "${stringResource(R.string.button_edit)} \u2014 $dateLabel $timeLabel",
+                style      = MaterialTheme.typography.titleMedium,
+                color      = colors.onSurface,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(16.dp))
+
+            if (characterMode != "emoji") {
+                androidx.compose.foundation.Image(
+                    painter            = androidx.compose.ui.res.painterResource(characterDrawableForValue(characterMode, moodValue)),
+                    contentDescription = "Mood $moodValue",
+                    modifier           = Modifier.size(100.dp),
+                )
+            } else {
+                Text(text = emojiForValue(moodValue), fontSize = 56.sp)
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text       = if (moodValue >= 0) "+$moodValue" else "$moodValue",
+                style      = MaterialTheme.typography.headlineSmall,
+                color      = thumbColor,
+                fontWeight = FontWeight.Bold,
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            SliderCard(value = moodValue, onChange = { moodValue = it }, colors = colors)
+
+            Spacer(Modifier.height(16.dp))
+
+            if (categories.isNotEmpty()) {
+                CausesCard(
+                    categories  = categories,
+                    selected    = selectedCauses,
+                    onToggle    = { id -> selectedCauses = if (id in selectedCauses) selectedCauses - id else selectedCauses + id },
+                    showAll     = showAllCauses,
+                    onToggleAll = { showAllCauses = !showAllCauses },
+                    colors      = colors,
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            NoteCard(
+                note         = note,
+                showNote     = showNote,
+                onToggle     = { showNote = !showNote },
+                onNoteChange = { if (it.length <= 300) note = it },
+                scrollState  = scrollState,
+                colors       = colors,
+            )
+
+            // Weather snapshot — read-only
+            if (weatherSnap != null) {
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = colors.outline.copy(alpha = 0.15f),
+                ) {
+                    Text(
+                        text     = "${conditionEmoji(weatherSnap.condition)} ${weatherSnap.condition} ${weatherSnap.temperatureC.toInt()}\u00b0C",
+                        style    = MaterialTheme.typography.labelMedium,
+                        color    = colors.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    val causeJson = JSONArray().apply { selectedCauses.forEach { put(it) } }.toString()
+                    onSave(
+                        entry.copy(
+                            moodValue = moodValue,
+                            causeIds  = causeJson,
+                            note      = note.trimEnd().ifEmpty { null },
+                            updatedAt = System.currentTimeMillis(),
+                        )
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape    = RoundedCornerShape(16.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = colors.primary),
+            ) {
+                Text(stringResource(R.string.button_save), style = MaterialTheme.typography.titleMedium)
+            }
+        }
     }
 }
