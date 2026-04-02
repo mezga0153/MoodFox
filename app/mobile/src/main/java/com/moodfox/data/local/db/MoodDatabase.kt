@@ -90,9 +90,52 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+// v3 → v4: some devices reached v3 via a divergent migration path (e.g. an intermediate
+// APK that had a different v3 schema without moonPhaseSnapshotId / MoonPhaseSnapshot). This
+// migration normalises every possible v3 state so Room's identity hash check passes on v4.
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Guard: ensure moon_phase_snapshots exists.
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `moon_phase_snapshots` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `timestamp` INTEGER NOT NULL,
+                `phase` TEXT NOT NULL,
+                `illumination` REAL NOT NULL,
+                `age` REAL NOT NULL
+            )
+        """.trimIndent())
+        // Guard: ensure all optional mood_entries columns exist.
+        try { db.execSQL("ALTER TABLE `mood_entries` ADD COLUMN `moonPhaseSnapshotId` INTEGER") } catch (_: Exception) {}
+        try { db.execSQL("ALTER TABLE `mood_entries` ADD COLUMN `updatedAt` INTEGER") } catch (_: Exception) {}
+
+        // Full table recreation to produce the exact DDL Room expects for v4.
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `mood_entries_new` (
+                `id`                  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `timestamp`           INTEGER NOT NULL,
+                `moodValue`           INTEGER NOT NULL,
+                `causeIds`            TEXT NOT NULL,
+                `note`                TEXT,
+                `weatherSnapshotId`   INTEGER,
+                `moonPhaseSnapshotId` INTEGER,
+                `updatedAt`           INTEGER
+            )
+        """.trimIndent())
+        db.execSQL("""
+            INSERT INTO `mood_entries_new`
+                SELECT `id`, `timestamp`, `moodValue`, `causeIds`, `note`,
+                       `weatherSnapshotId`, `moonPhaseSnapshotId`, `updatedAt`
+                FROM `mood_entries`
+        """.trimIndent())
+        db.execSQL("DROP TABLE `mood_entries`")
+        db.execSQL("ALTER TABLE `mood_entries_new` RENAME TO `mood_entries`")
+    }
+}
+
 @Database(
     entities = [MoodEntry::class, CauseCategory::class, WeatherSnapshot::class, MoonPhaseSnapshot::class],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class MoodDatabase : RoomDatabase() {

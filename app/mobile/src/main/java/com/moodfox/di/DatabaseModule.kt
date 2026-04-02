@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.moodfox.data.local.db.CauseCategoryDao
 import com.moodfox.data.local.db.MIGRATION_1_2
 import com.moodfox.data.local.db.MIGRATION_2_3
+import com.moodfox.data.local.db.MIGRATION_3_4
 import com.moodfox.data.local.db.MoodDatabase
 import com.moodfox.data.local.db.MoodEntryDao
 import com.moodfox.data.local.db.MoonPhaseSnapshotDao
@@ -28,7 +29,7 @@ object DatabaseModule {
             MoodDatabase::class.java,
             "moodfox.db"
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
     }
 
